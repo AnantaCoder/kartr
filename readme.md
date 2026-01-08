@@ -80,11 +80,8 @@ The key technologies used include:
 
 ## The Team
 *   **Kiran Chawan**: Founder and CEO of Datatukey, Kartr
-*   **Durgesh**: AI/ML Engineer
-*   **Hritshav**: CTO and AI/ML Engineer
-*   **Abhinav Suraj**: Senior AI/ML Engineer
-*   **Ravi Shankar**: Senior Fullstack Developer
-*   **Kashish**: Frontend Developer
+*   **Anirban Sarkar**: AI/ML Engineer
+
 
 ## Contact Us
 *   **Address**: Proworks 235, Binnamangala, 2nd floor, 13th cross road, 2nd stage, Indira Nagar, Bengaluru- 560038
