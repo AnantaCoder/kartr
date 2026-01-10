@@ -135,7 +135,7 @@ async def ask_question(
                 context = relevant.to_string(index=False)
         
         # Generate answer
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         prompt = f"""Based on the following data about creators and sponsors:
 
 {context}

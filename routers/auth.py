@@ -35,6 +35,7 @@ async def register(user_data: UserCreate):
     - **email**: Valid email address
     - **password**: Password (min 8 characters)
     - **user_type**: Either 'influencer' or 'sponsor'
+    - **full_name**: User's full name (optional)
     
     Returns JWT token on successful registration.
     """
@@ -42,7 +43,8 @@ async def register(user_data: UserCreate):
         username=user_data.username,
         email=user_data.email,
         password=user_data.password,
-        user_type=user_data.user_type
+        user_type=user_data.user_type,
+        full_name=getattr(user_data, 'full_name', '') or ''
     )
     
     if not success:
@@ -61,6 +63,7 @@ async def register(user_data: UserCreate):
             username=user["username"],
             email=user["email"],
             user_type=user["user_type"],
+            full_name=user.get("full_name", ""),
             date_registered=user.get("date_registered", ""),
             email_visible=user.get("email_visible", False)
         )
@@ -102,6 +105,7 @@ async def login(login_data: UserLogin):
             username=user["username"],
             email=user["email"],
             user_type=user["user_type"],
+            full_name=user.get("full_name", ""),
             date_registered=user.get("date_registered", ""),
             email_visible=user.get("email_visible", False)
         )
@@ -177,6 +181,7 @@ async def oauth_callback(
             username=user["username"],
             email=user["email"],
             user_type=user["user_type"],
+            full_name=user.get("full_name", ""),
             date_registered=user.get("date_registered", ""),
             email_visible=user.get("email_visible", False)
         )
@@ -268,6 +273,7 @@ async def verify_otp_endpoint(request: OTPVerifyRequest):
             username=user["username"],
             email=user["email"],
             user_type=user["user_type"],
+            full_name=user.get("full_name", ""),
             date_registered=user.get("date_registered", ""),
             email_visible=user.get("email_visible", False)
         )
@@ -290,6 +296,7 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         username=current_user["username"],
         email=current_user["email"],
         user_type=current_user["user_type"],
+        full_name=current_user.get("full_name", ""),
         date_registered=current_user.get("date_registered", ""),
         email_visible=current_user.get("email_visible", False)
     )

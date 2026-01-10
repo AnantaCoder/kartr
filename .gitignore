@@ -43,6 +43,7 @@ firebase-service-account.json
 serviceAccountKey.json
 firebase-credentials.json
 *-firebase-adminsdk-*.json
+kartr-firebase-adminsdk.json
 
 # =============================================================================
 # IDE & Editor
@@ -73,6 +74,7 @@ desktop.ini
 # =============================================================================
 # Testing & Coverage
 # =============================================================================
+tests/
 .pytest_cache/
 .coverage
 htmlcov/
@@ -82,6 +84,7 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
+test_results*.txt
 
 # =============================================================================
 # Logs & Databases

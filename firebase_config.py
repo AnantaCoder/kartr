@@ -37,6 +37,8 @@ def _load_credentials_from_env() -> Optional[Any]:
     1. Path to a JSON service account file
     2. JSON string containing service account credentials
     
+    Also auto-detects common Firebase credential files as fallback.
+    
     Returns:
         Firebase credentials object or None if not configured
     """
@@ -44,12 +46,16 @@ def _load_credentials_from_env() -> Optional[Any]:
     
     creds_value = getattr(settings, 'FIREBASE_CREDENTIALS', '').strip()
     
-    if not creds_value:
-        logger.debug("FIREBASE_CREDENTIALS not set in environment")
-        return None
+    # Common credential file patterns to try as fallback
+    common_cred_files = [
+        'kartr-firebase-adminsdk.json',
+        'firebase-adminsdk.json',
+        'firebase-service-account.json',
+        'service-account.json',
+    ]
     
-    # Detect if value is JSON string or file path
-    if creds_value.startswith('{'):
+    # If creds_value is a JSON string, parse it
+    if creds_value and creds_value.startswith('{'):
         try:
             creds_dict = json.loads(creds_value)
             return credentials.Certificate(creds_dict)
@@ -60,20 +66,35 @@ def _load_credentials_from_env() -> Optional[Any]:
             logger.error(f"Failed to create credentials from JSON: {e}")
             return None
     
-    # Treat as file path
-    # Handle both absolute and relative paths
-    if not os.path.isabs(creds_value):
-        creds_value = os.path.join(os.path.dirname(__file__), creds_value)
+    # Build list of paths to try
+    paths_to_try = []
+    base_dir = os.path.dirname(__file__)
     
-    if not os.path.exists(creds_value):
-        logger.error(f"Firebase credentials file not found: {creds_value}")
-        return None
+    # Add configured path first (if provided)
+    if creds_value:
+        if os.path.isabs(creds_value):
+            paths_to_try.append(creds_value)
+        else:
+            paths_to_try.append(os.path.join(base_dir, creds_value))
     
-    try:
-        return credentials.Certificate(creds_value)
-    except Exception as e:
-        logger.error(f"Failed to load credentials from file: {e}")
-        return None
+    # Add common fallback paths
+    for filename in common_cred_files:
+        fallback_path = os.path.join(base_dir, filename)
+        if fallback_path not in paths_to_try:
+            paths_to_try.append(fallback_path)
+    
+    # Try each path
+    for cred_path in paths_to_try:
+        if os.path.exists(cred_path):
+            try:
+                logger.info(f"Loading Firebase credentials from: {cred_path}")
+                return credentials.Certificate(cred_path)
+            except Exception as e:
+                logger.error(f"Failed to load credentials from {cred_path}: {e}")
+                continue
+    
+    logger.error(f"Firebase credentials file not found. Tried: {paths_to_try}")
+    return None
 
 
 def initialize_firebase() -> bool:

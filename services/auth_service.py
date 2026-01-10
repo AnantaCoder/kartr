@@ -1,9 +1,3 @@
-"""
-Authentication service for user management.
-
-Handles user registration, login, token generation, and password reset.
-Uses Firebase Firestore for user storage and Firebase Auth for authentication.
-"""
 import logging
 from datetime import datetime
 from typing import Optional, Tuple, Dict, Any
@@ -38,7 +32,8 @@ class AuthService:
         username: str,
         email: str,
         password: str,
-        user_type: str
+        user_type: str,
+        full_name: str = ""
     ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
         """
         Register a new user.
@@ -48,6 +43,7 @@ class AuthService:
             email: Valid email address
             password: Password (min 8 characters)
             user_type: Either 'influencer' or 'sponsor'
+            full_name: User's full name (optional)
             
         Returns:
             Tuple of (success, user_data, error_message)
@@ -80,6 +76,7 @@ class AuthService:
                 "email": email,
                 "password_hash": password_hash,
                 "user_type": user_type,
+                "full_name": full_name,
                 "date_registered": datetime.utcnow().isoformat(),
                 "email_visible": False,
             }
@@ -94,9 +91,14 @@ class AuthService:
             # Fallback to mock database
             return AuthService._register_with_mock(user_data, email, username)
             
+        except ValueError as e:
+            error_msg = f"Password hashing error: {str(e)}"
+            logger.error(f"Registration error for {email}: {error_msg}")
+            return False, None, f"Registration failed: {error_msg}"
         except Exception as e:
-            logger.error(f"Registration error for {email}: {e}")
-            return False, None, "Registration failed. Please try again."
+            error_msg = str(e) if str(e) else "Unknown error occurred"
+            logger.error(f"Registration error for {email}: {type(e).__name__}: {e}")
+            return False, None, f"Registration failed: {error_msg}"
     
     @staticmethod
     def _register_with_firebase(
@@ -248,10 +250,11 @@ class AuthService:
         username: str,
         email: str,
         password: str,
-        user_type: str
+        user_type: str,
+        full_name: str = ""
     ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
         """Alias for register_user(). Kept for backward compatibility."""
-        return AuthService.register_user(username, email, password, user_type)
+        return AuthService.register_user(username, email, password, user_type, full_name)
     
     # =========================================================================
     # Token Management

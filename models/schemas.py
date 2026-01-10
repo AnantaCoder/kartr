@@ -2,7 +2,7 @@
 Pydantic schemas for request/response validation
 """
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -16,6 +16,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     user_type: str = Field(..., pattern="^(influencer|sponsor)$")
+    full_name: Optional[str] = Field(default="", max_length=128)
 
 
 class UserLogin(BaseModel):
@@ -25,12 +26,13 @@ class UserLogin(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """Schema for user response"""
-    id: int
+    """Schema for user response - supports both Firebase (string) and SQL (int) IDs"""
+    id: Union[int, str]
     username: str
     email: str
     user_type: str
-    date_registered: datetime
+    full_name: Optional[str] = ""
+    date_registered: Union[datetime, str]  # Accept both datetime and ISO string
     email_visible: bool = False
 
     class Config:
