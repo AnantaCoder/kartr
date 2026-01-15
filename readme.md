@@ -247,6 +247,19 @@ EMAIL_PASSWORD=your-app-password
 | GET | `/health` | Health check | No |
 | GET | `/contact` | Contact info | No |
 
+### AI Chat (`/api/chat`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/conversations` | Create new conversation | Yes |
+| GET | `/conversations` | List conversations (paginated) | Yes |
+| GET | `/conversations/{id}` | Get conversation by ID | Yes |
+| PATCH | `/conversations/{id}` | Update conversation title | Yes |
+| DELETE | `/conversations/{id}` | Delete conversation | Yes |
+| GET | `/conversations/{id}/messages` | Get messages (paginated) | Yes |
+| POST | `/conversations/{id}/messages` | Send message & get AI response | Yes |
+| POST | `/quick` | Quick chat (create + send) | Yes |
+
 ---
 
 ## 🔐 Authentication

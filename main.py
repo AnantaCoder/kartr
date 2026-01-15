@@ -32,6 +32,7 @@ from routers.social_media import router as social_media_router
 from routers.image_generation import router as image_generation_router
 from routers.visualization import router as visualization_router
 from routers.utilities import router as utilities_router
+from routers.chat import router as chat_router
 
 # Configure logging
 logging.basicConfig(
@@ -76,6 +77,7 @@ app.include_router(social_media_router)
 app.include_router(image_generation_router)
 app.include_router(visualization_router)
 app.include_router(utilities_router)
+app.include_router(chat_router)
 
 
 @app.get("/")

@@ -82,6 +82,20 @@ def get_searches_repository() -> Optional['FirestoreRepository']:
     return FirestoreRepository('searches')
 
 
+def get_chat_conversations_repository() -> Optional['FirestoreRepository']:
+    """Get repository for chat_conversations collection."""
+    if not is_firebase_configured():
+        return None
+    return FirestoreRepository('chat_conversations')
+
+
+def get_chat_messages_repository() -> Optional['FirestoreRepository']:
+    """Get repository for chat_messages collection."""
+    if not is_firebase_configured():
+        return None
+    return FirestoreRepository('chat_messages')
+
+
 # =============================================================================
 # Mock Database for Development
 # =============================================================================
