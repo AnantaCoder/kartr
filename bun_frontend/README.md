@@ -1,90 +1,116 @@
-# Kartr FastAPI Backend
+# Kartr Frontend
 
-A modern, RESTful API backend for the Kartr influencer-sponsor platform built with FastAPI and Supabase.
+A modern, high-performance React frontend for the Kartr influencer-sponsor platform, built with **Bun** runtime and **Redux Toolkit** for state management.
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
+- [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Setup & Installation](#setup--installation)
-- [Configuration](#configuration)
-- [API Endpoints](#api-endpoints)
-- [Authentication](#authentication)
-- [Database Schema](#database-schema)
 - [Development](#development)
-- [Testing](#testing)
+- [Build & Production](#build--production)
+- [Architecture & Coding Practices](#architecture--coding-practices)
+- [Contributing](#contributing)
 
 ---
 
 ## 🎯 Overview
 
-Kartr FastAPI Backend provides a complete API for connecting influencers with sponsors. It includes:
+Kartr Frontend provides a sleek, responsive UI for connecting influencers with sponsors. It includes:
 
-- **User Management**: Registration, authentication with email/password or Google OAuth
-- **YouTube Analytics**: Video and channel statistics, content analysis
-- **Search**: Find influencers and sponsors
-- **Virtual Influencers**: Rent AI-powered virtual influencers
-- **Social Media Integration**: Post to multiple platforms
-- **Image Generation**: Create promotional content
-- **Data Visualization**: Relationship graphs and analytics
+- **Authentication**: Login, registration for Influencers & Sponsors
+- **YouTube Analytics**: Analyze channels and videos
+- **Dashboard**: View and manage connections
+- **Modern UI**: Built with shadcn/ui components and TailwindCSS
 
 ---
 
-## ✨ Features
+## ⚡ Tech Stack
 
-| Feature | Description |
-|---------|-------------|
-| 🔐 **Authentication** | Email/password + Google OAuth via Supabase |
-| 📊 **YouTube Analytics** | Video stats, channel analysis, sponsor detection |
-| 🔍 **Search** | Find users, channels with autocomplete |
-| 🤖 **Virtual Influencers** | AI influencer marketplace |
-| 📱 **Social Media** | Multi-platform posting |
-| 🖼️ **Image Generation** | AI-powered promotional images |
-| 📈 **Visualization** | Creator-sponsor relationship graphs |
-| ❓ **RAG Q&A** | AI-powered question answering |
+| Technology | Purpose |
+|------------|---------|
+| 🥟 **Bun** | JavaScript runtime & package manager |
+| ⚛️ **React 19** | UI library |
+| 📘 **TypeScript** | Type safety |
+| 🎨 **TailwindCSS 4** | Utility-first CSS framework |
+| 🧩 **shadcn/ui** | Reusable UI component library |
+| 🔄 **Redux Toolkit** | State management |
+| 🚏 **React Router v7** | Client-side routing |
+| 📝 **React Hook Form** | Form handling |
+| ✅ **Zod** | Schema validation |
+| 🎬 **Framer Motion** | Animations |
+| 🔌 **Axios** | HTTP client |
+| 🎨 **Lucide React** | Icon library |
 
 ---
 
 ## 📁 Project Structure
 
 ```
-fastapi_backend/
-├── main.py                 # Application entry point
-├── config.py               # Configuration settings
-├── database.py             # Database connection (Supabase/Mock)
-├── requirements.txt        # Python dependencies
-├── .env.example            # Environment template
-├── README.md               # This documentation
+bun_frontend/
+├── src/
+│   ├── app/                    # Redux store configuration
+│   │   ├── store.ts            # Store configuration
+│   │   ├── rootReducer.ts      # Combined reducers
+│   │   └── hooks.ts            # Typed Redux hooks (useAppDispatch, useAppSelector)
+│   │
+│   ├── features/               # Feature-based modules (Redux slices + related code)
+│   │   ├── auth/               # Authentication feature
+│   │   │   ├── index.ts        # Barrel exports
+│   │   │   ├── api/            # Auth API calls
+│   │   │   ├── slices/         # Redux slices
+│   │   │   ├── schemas/        # Zod validation schemas
+│   │   │   └── types/          # TypeScript types
+│   │   │
+│   │   └── youtube/            # YouTube analytics feature
+│   │
+│   ├── components/             # Reusable components
+│   │   ├── ui/                 # Base UI components (shadcn/ui)
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── form.tsx
+│   │   │   ├── select.tsx
+│   │   │   └── ...
+│   │   │
+│   │   ├── Header.tsx          # App header
+│   │   ├── Footer.tsx          # App footer
+│   │   ├── ChatBot.tsx         # AI chat component
+│   │   └── ...
+│   │
+│   ├── pages/                  # Page-level components (route targets)
+│   │   ├── Home.tsx
+│   │   ├── Login.tsx
+│   │   ├── SignupInfluencer.tsx
+│   │   ├── SignupSponsor.tsx
+│   │   └── YoutubeAnalysis.tsx
+│   │
+│   ├── routes/                 # Routing configuration
+│   │   └── AppRoutes.tsx       # Route definitions
+│   │
+│   ├── services/               # API & external service clients
+│   │   └── apiClient.ts        # Axios instance with interceptors
+│   │
+│   ├── lib/                    # Shared utilities
+│   │   └── utils.ts            # Helper functions (cn, etc.)
+│   │
+│   ├── types/                  # Global TypeScript types
+│   ├── utils/                  # Utility functions
+│   ├── assets/                 # Static assets (icons, images)
+│   │
+│   ├── App.tsx                 # Root App component
+│   ├── main.tsx                # Application entry point
+│   └── index.html              # HTML template
 │
-├── models/
-│   ├── __init__.py
-│   └── schemas.py          # Pydantic request/response models
+├── styles/
+│   └── globals.css             # Global styles & Tailwind imports
 │
-├── routers/
-│   ├── __init__.py
-│   ├── auth.py             # Authentication endpoints
-│   ├── youtube.py          # YouTube analytics endpoints
-│   ├── search.py           # Search endpoints
-│   ├── virtual_influencer.py
-│   ├── social_media.py
-│   ├── image_generation.py
-│   ├── visualization.py
-│   └── utilities.py
-│
-├── services/
-│   ├── __init__.py
-│   ├── auth_service.py     # Authentication logic
-│   ├── youtube_service.py  # YouTube API integration
-│   └── email_service.py    # Email notifications
-│
-├── utils/
-│   ├── __init__.py
-│   ├── security.py         # Password hashing, JWT tokens
-│   └── dependencies.py     # FastAPI dependencies
-│
-├── data/                   # Local data storage
-└── venv/                   # Virtual environment
+├── build.ts                    # Bun build script
+├── bunfig.toml                 # Bun configuration
+├── tsconfig.json               # TypeScript configuration
+├── package.json                # Dependencies & scripts
+└── components.json             # shadcn/ui configuration
 ```
 
 ---
@@ -93,275 +119,277 @@ fastapi_backend/
 
 ### Prerequisites
 
-- Python 3.11 or higher
-- Supabase account (optional, falls back to mock database)
+- **Bun** (v1.0 or higher) - [Install Bun](https://bun.sh/docs/installation)
+- **Node.js** (optional, for compatibility)
 
 ### Installation Steps
 
-1. **Navigate to fastapi_backend directory**
+1. **Clone and navigate to the frontend directory**
    ```bash
-   cd fastapi_backend
+   cd bun_frontend
    ```
 
-2. **Activate virtual environment**
+2. **Install dependencies**
    ```bash
-   # Windows
-   .\venv\Scripts\activate
+   bun install
+   ```
+
+3. **Configure environment variables**
+   ```bash
+   # Create .env file
+   cp .env.example .env
    
-   # Linux/Mac
-   source venv/bin/activate
+   # Edit with your backend API URL
+   # BACKEND_API_URL=http://localhost:8000/api
    ```
 
-3. **Install dependencies** (if not already installed)
+4. **Start development server**
    ```bash
-   pip install -r requirements.txt
+   bun dev
    ```
 
-4. **Configure environment variables**
-   ```bash
-   # Copy example to .env
-   copy .env.example .env
-   
-   # Edit .env with your credentials
-   ```
-
-5. **Run the server**
-   ```bash
-   uvicorn main:app --reload --port 8000
-   ```
-
-6. **Access the API**
-   - API Docs: http://localhost:8000/docs
-   - ReDoc: http://localhost:8000/redoc
-   - Health Check: http://localhost:8000/api/health
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-Create a `.env` file with the following variables:
-
-```env
-# App Settings
-DEBUG=true
-SECRET_KEY=your-secret-key-min-32-characters
-
-# Supabase (Required for production)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-supabase-anon-key
-
-# YouTube API (Optional)
-YOUTUBE_API_KEY=your-youtube-api-key
-
-# Gemini API (Optional, for AI features)
-GEMINI_API_KEY=your-gemini-api-key
-
-# Email (Optional, for OTP)
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password
-```
-
-### Supabase Setup for Google OAuth
-
-1. Go to Supabase Dashboard > Authentication > Providers
-2. Enable Google provider
-3. Add your Google OAuth credentials
-4. Set redirect URL to: `http://localhost:8000/api/auth/callback`
-
----
-
-## 🔌 API Endpoints
-
-### Authentication (`/api/auth`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/register` | Register new user | No |
-| POST | `/login` | Login with email/password | No |
-| GET | `/google` | Start Google OAuth | No |
-| GET | `/callback` | OAuth callback | No |
-| POST | `/logout` | Logout user | Yes |
-| POST | `/forgot-password` | Request password reset | No |
-| POST | `/verify-otp` | Verify OTP | No |
-| GET | `/me` | Get current user | Yes |
-
-### YouTube Analytics (`/api/youtube`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/stats` | Get video/channel stats | Yes |
-| POST | `/demo` | Extract video info | Yes |
-| POST | `/analyze-video` | AI video analysis | Yes |
-| POST | `/analyze-channel` | Batch channel analysis | Yes |
-| POST | `/save-analysis` | Save analysis to DB | Yes |
-| GET | `/channels` | List user's channels | Yes |
-
-### Search (`/api/search`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/` | Search users/channels | Yes |
-| GET | `/suggestions` | Autocomplete | No |
-
-### Virtual Influencers (`/api/virtual-influencers`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/` | List virtual influencers | Yes |
-| GET | `/{id}` | Get influencer details | Yes |
-
-### Social Media (`/api/social-media`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/agents` | List social media agents | Yes |
-| POST | `/post-bluesky` | Post to Bluesky | Yes |
-| GET | `/images` | List available images | Yes |
-
-### Image Generation (`/api/images`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/generate` | Generate promo image | Yes |
-| POST | `/generate-llm` | LLM image generation | Yes |
-| GET | `/generated` | List generated images | Yes |
-
-### Visualization (`/api`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/graphs/creator-sponsor` | Creator-sponsor graph | Yes |
-| GET | `/graphs/industry` | Industry graph | Yes |
-| POST | `/questions/ask` | RAG Q&A | Yes |
-| GET | `/visualization/data` | Dashboard data | Yes |
-
-### Utilities (`/api`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/user/toggle-email-visibility` | Toggle email visibility | Yes |
-| GET | `/user/profile` | Get user profile | Yes |
-| GET | `/stats/platform` | Platform statistics | No |
-| GET | `/health` | Health check | No |
-| GET | `/contact` | Contact info | No |
-
----
-
-## 🔐 Authentication
-
-### JWT Token Authentication
-
-1. **Register or Login** to receive a JWT token
-2. **Include token** in Authorization header:
-   ```
-   Authorization: Bearer <your-jwt-token>
-   ```
-
-### Google OAuth Flow
-
-1. Redirect user to `GET /api/auth/google`
-2. User authenticates with Google
-3. Callback redirects to `/api/auth/callback` with tokens
-4. Receive JWT token for your application
-
----
-
-## 🗄️ Database Schema
-
-### Users Table
-
-```sql
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(64) UNIQUE NOT NULL,
-    email VARCHAR(120) UNIQUE NOT NULL,
-    password_hash VARCHAR(256),
-    user_type VARCHAR(20) NOT NULL,  -- 'influencer' or 'sponsor'
-    date_registered TIMESTAMP DEFAULT NOW(),
-    email_visible BOOLEAN DEFAULT FALSE,
-    supabase_auth_id UUID,
-    avatar_url TEXT
-);
-```
-
-### YouTube Channels Table
-
-```sql
-CREATE TABLE youtube_channels (
-    id SERIAL PRIMARY KEY,
-    channel_id VARCHAR(120) NOT NULL,
-    title VARCHAR(120) NOT NULL,
-    subscriber_count INTEGER,
-    video_count INTEGER,
-    view_count INTEGER,
-    date_added TIMESTAMP DEFAULT NOW(),
-    date_updated TIMESTAMP DEFAULT NOW(),
-    user_id INTEGER REFERENCES users(id)
-);
-```
-
-### Searches Table
-
-```sql
-CREATE TABLE searches (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    search_term VARCHAR(255) NOT NULL,
-    video_id VARCHAR(20),
-    date_searched TIMESTAMP DEFAULT NOW()
-);
-```
+5. **Access the application**
+   - Development: http://localhost:3000
 
 ---
 
 ## 💻 Development
 
-### Running in Development Mode
+### Available Scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| **dev** | `bun dev` | Start development server with hot reload |
+| **start** | `bun start` | Run production build |
+| **build** | `bun run build` | Build for production |
+
+### Development Server
 
 ```bash
-# Activate virtual environment
-.\venv\Scripts\activate
+# Start with hot reload
+bun dev
 
-# Run with auto-reload
-uvicorn main:app --reload --port 8000
+# The server runs on http://localhost:3000 by default
 ```
 
-### Code Style
+### Build Script Options
 
-- Follow PEP 8 guidelines
-- Use type hints for all functions
-- Document all public functions with docstrings
-- Use Pydantic for request/response validation
+The `build.ts` script accepts various command-line options:
+
+```bash
+# Basic production build
+bun run build
+
+# With custom options
+bun run build.ts --outdir=dist --minify --sourcemap=linked
+
+# View all options
+bun run build.ts --help
+```
 
 ---
 
-## 🧪 Testing
+## 🏗️ Build & Production
 
-### Structural Testing
-
-To verify the structure without API keys:
+### Production Build
 
 ```bash
-# Activate venv
-.\venv\Scripts\activate
+# Create optimized production build
+bun run build
 
-# Test imports
-python -c "from main import app; print('✓ App loads successfully')"
-
-# Test individual modules
-python -c "from config import settings; print('✓ Config OK')"
-python -c "from database import get_mock_db; print('✓ Database OK')"
-python -c "from models.schemas import UserCreate; print('✓ Models OK')"
-python -c "from utils.security import hash_password; print('✓ Security OK')"
+# Output is placed in the 'dist' folder
 ```
 
-### API Testing
+### Build Output
 
-1. Start the server
-2. Go to http://localhost:8000/docs
-3. Test endpoints using Swagger UI
+The build process:
+- Minifies all JavaScript/TypeScript files
+- Generates source maps (linked)
+- Processes Tailwind CSS
+- Outputs to `dist/` directory
+
+---
+
+## 🏛️ Architecture & Coding Practices
+
+### Feature-Based Architecture
+
+The codebase follows a **feature-based architecture** where each feature is self-contained:
+
+```
+features/
+└── auth/
+    ├── index.ts       # Barrel exports (public API)
+    ├── api/           # Feature-specific API calls
+    ├── slices/        # Redux slices (reducers + actions)
+    ├── schemas/       # Zod validation schemas
+    └── types/         # TypeScript types/interfaces
+```
+
+**Benefits:**
+- ✅ High cohesion - related code stays together
+- ✅ Easy to navigate and maintain
+- ✅ Scales well as the app grows
+- ✅ Clear boundaries between features
+
+### State Management (Redux Toolkit)
+
+```typescript
+// src/app/store.ts - Store configuration
+import { configureStore } from "@reduxjs/toolkit";
+import rootReducer from "./rootReducer";
+
+export const store = configureStore({
+  reducer: rootReducer
+});
+
+export type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>;
+```
+
+```typescript
+// src/app/hooks.ts - Typed hooks
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "./store";
+
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
+export const useAppSelector = useSelector.withTypes<RootState>();
+```
+
+### Component Patterns
+
+**UI Components** (`components/ui/`):
+- Reusable, presentational components
+- Based on shadcn/ui patterns
+- Use `class-variance-authority` for variants
+- Accept props via interfaces
+
+```typescript
+// Example: Button component with variants
+import { cva, type VariantProps } from "class-variance-authority";
+
+const buttonVariants = cva("btn-base", {
+  variants: {
+    variant: { default: "...", outline: "..." },
+    size: { default: "...", sm: "...", lg: "..." }
+  }
+});
+```
+
+**Feature Components** (`features/*/`):
+- Connected to Redux store
+- Handle business logic
+- Compose UI components
+
+**Page Components** (`pages/`):
+- Top-level route components
+- Compose features and UI components
+- Handle page-level layout
+
+### Form Handling
+
+Forms use **React Hook Form** with **Zod** validation:
+
+```typescript
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8)
+});
+
+type FormData = z.infer<typeof schema>;
+
+const { register, handleSubmit } = useForm<FormData>({
+  resolver: zodResolver(schema)
+});
+```
+
+### API Client
+
+Centralized Axios client with JWT interceptor:
+
+```typescript
+// src/services/apiClient.ts
+import axios from "axios";
+
+const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: { "Content-Type": "application/json" }
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+### Path Aliases
+
+TypeScript path aliases are configured for cleaner imports:
+
+```typescript
+// tsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+
+// Usage
+import { Button } from "@/components/ui/button";
+import { useAppDispatch } from "@/app/hooks";
+```
+
+### Code Style Guidelines
+
+| Practice | Description |
+|----------|-------------|
+| **TypeScript Strict Mode** | All files use strict TypeScript |
+| **Functional Components** | Use `React.FC<Props>` pattern |
+| **Named Exports** | Prefer named exports for better tree-shaking |
+| **Barrel Exports** | Use `index.ts` for feature public APIs |
+| **Component Naming** | PascalCase for components, camelCase for utilities |
+| **File Naming** | Component files match component name (e.g., `Button.tsx`) |
+
+---
+
+## 📝 Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BACKEND_API_URL` | Backend API base URL | `http://localhost:8000/api` |
+
+The API client automatically detects environment variables from:
+1. Bun environment (`Bun.env`)
+2. Vite environment (`import.meta.env`)
+3. Node.js environment (`process.env`)
+
+---
+
+## 🤝 Contributing
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Follow** the coding practices outlined above
+4. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+5. **Push** to the branch (`git push origin feature/amazing-feature`)
+6. **Open** a Pull Request
+
+### Before Submitting
+
+- [ ] Code follows the project structure
+- [ ] TypeScript has no errors (`bun run build`)
+- [ ] New features include types and schemas
+- [ ] Components are properly documented
 
 ---
 
@@ -371,13 +399,4 @@ MIT License - See LICENSE file for details.
 
 ---
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
----
-
-**Built with ❤️ using FastAPI and Supabase**
+**Built with ❤️ using Bun, React, and TailwindCSS**

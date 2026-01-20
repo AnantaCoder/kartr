@@ -70,13 +70,43 @@ We are committed to continuous innovation and expanding KARTR's capabilities:
 *   **AI Communication**: Automate brand inquiries and strategic advice.
 
 ## Tech Stack
-The key technologies used include:
-*   S3
-*   JS
-*   Gemini
-*   Flask
-*   Auth0
-*   AIML
+
+| Layer | Technologies |
+|-------|--------------|
+| **Backend** | FastAPI (Python), Firebase Admin SDK |
+| **Database** | Firebase Firestore |
+| **Authentication** | Firebase Auth (Email/Password + Google OAuth), JWT |
+| **AI/ML** | Google Gemini API (gemini-2.5-flash, gemini-2.5-flash-lite) |
+| **Image Generation** | Gemini (gemini-2.0-flash-exp-image-generation) |
+| **APIs** | YouTube Data API v3 |
+| **Email** | SMTP (Gmail) |
+
+---
+
+## What Kartr Does (At a Glance)
+
+**Kartr is an Influencer-Sponsor Matching Platform** that uses AI to connect brands with the right content creators.
+
+### For Sponsors/Brands:
+- 🔍 **Find influencers** by niche and industry
+- 📊 **Analyze creator content** and detect sponsorships
+- 📈 **View relationship graphs** (who works with whom)
+
+### For Influencers:
+- 📺 **Track channel analytics** via YouTube integration
+- 💡 **Get AI-powered insights** on your content
+- 🤝 **Discover sponsorship opportunities**
+
+### Core Features:
+| Feature | Description |
+|---------|-------------|
+| **YouTube Analysis** | Paste any video → Get stats + AI sponsor detection |
+| **AI Chat Assistant** | Ask questions about marketing strategies |
+| **Relationship Graphs** | Visualize creator-sponsor connections |
+| **Image Generation** | Create promotional content with AI |
+| **Virtual Influencers** | (Coming soon) Rent AI-powered avatars |
+
+---
 
 ## The Team
 *   **Kiran Chawan**: Founder and CEO of Datatukey, Kartr

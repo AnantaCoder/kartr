@@ -443,7 +443,7 @@ class ChatService:
             
             # Initialize the model with Kartr context
             model = genai.GenerativeModel(
-                model_name="gemini-2.5-flash-lite",
+                model_name=settings.GEMINI_CHAT_MODEL,
                 system_instruction=KARTR_CONTEXT
             )
             

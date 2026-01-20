@@ -50,7 +50,7 @@ def analyze_influencer_sponsors(video_url: str) -> Dict[str, Any]:
     prompt = _create_analysis_prompt(video_data)
     
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel(settings.GEMINI_TEXT_MODEL)
         response = model.generate_content(prompt)
         
         # Store raw response text

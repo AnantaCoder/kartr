@@ -113,7 +113,8 @@ async def health_check():
     """
     return {
         "status": "healthy",
-        "service": "Kartr FastAPI Backend"
+        "service": "Kartr FastAPI Backend v1.0.0"
+        
     }
 
 
