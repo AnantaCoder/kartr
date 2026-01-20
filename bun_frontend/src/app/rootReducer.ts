@@ -1,11 +1,10 @@
 import { combineReducers } from "@reduxjs/toolkit";
-import authReducer from "../features/auth/authSlice";
-import youtubeReducer from "@/features/auth/youtubeSlice"
+import { authReducer } from "../features/auth";
+import youtubeReducer from "@/features/auth/youtubeSlice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
-    youtube: youtubeReducer
-  // Add other reducers here
+  youtube: youtubeReducer,
 });
 
 export default rootReducer;

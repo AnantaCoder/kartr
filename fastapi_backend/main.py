@@ -52,12 +52,19 @@ app = FastAPI(
 )
 
 # Configure CORS - allowed origins for frontend
+# Get additional origins from environment variable
+ENV_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else []
+
 ALLOWED_ORIGINS = [
-    "http://localhost:3000",      # React/Next.js development
+    "http://localhost:3000",      # Bun/React/Next.js development
     "http://127.0.0.1:3000",
+    "http://localhost:3001",      # Alternative port
+    "http://127.0.0.1:3001",
     "http://localhost:5173",      # Vite development
     "http://127.0.0.1:5173",
-]
+    "http://localhost:8080",      # Common dev port
+    "http://127.0.0.1:8080",
+] + [origin.strip() for origin in ENV_ORIGINS if origin.strip()]
 
 
 app.add_middleware(
