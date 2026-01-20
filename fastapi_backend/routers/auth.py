@@ -11,6 +11,7 @@ from models.schemas import (
     Token,
     ForgotPasswordRequest,
     OTPVerifyRequest,
+    GoogleLoginRequest,
     MessageResponse,
 )
 from services.auth_service import AuthService
@@ -113,62 +114,28 @@ async def login(login_data: UserLogin):
 
 
 # =========================================
-# Google OAuth (via Supabase)
+# Google OAuth
 # =========================================
 
-@router.get("/google")
-async def google_login(
-    redirect_url: str = Query(default="http://localhost:8000/api/auth/callback")
-):
+@router.post("/google", response_model=Token)
+async def google_login(request: GoogleLoginRequest):
     """
-    Initiate Google OAuth login via Supabase.
+    Login with Google (Firebase ID Token).
     
-    - **redirect_url**: URL to redirect after successful login
+    - **id_token**: Firebase ID token received from frontend
+    - **user_type**: User type for new registration (default: 'influencer')
     
-    Redirects to Google OAuth consent screen.
+    Returns JWT token on successful authentication.
     """
-    success, oauth_url, error = AuthService.get_google_oauth_url(redirect_url)
-    
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=error or "Google OAuth not available"
-        )
-    
-    return RedirectResponse(url=oauth_url)
-
-
-@router.get("/callback")
-async def oauth_callback(
-    access_token: str = Query(None),
-    refresh_token: str = Query(None),
-    error: str = Query(None),
-    error_description: str = Query(None)
-):
-    """
-    Handle OAuth callback from Supabase.
-    
-    This endpoint receives the tokens after successful Google login.
-    Returns JWT token for the application.
-    """
-    if error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_description or error
-        )
-    
-    if not access_token:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No access token received"
-        )
-    
-    success, user, error_msg = AuthService.handle_oauth_callback(access_token, refresh_token)
+    success, user, error = AuthService.handle_oauth_callback(
+        id_token=request.id_token,
+        user_type=request.user_type or "influencer"
+    )
     
     if not success:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=error_msg or "OAuth authentication failed"
+            detail=error or "Invalid Google token"
         )
     
     token = AuthService.generate_token(user)
@@ -186,6 +153,7 @@ async def oauth_callback(
             email_visible=user.get("email_visible", False)
         )
     )
+
 
 
 # =========================================

@@ -169,12 +169,13 @@ class YouTubeService:
     # YouTube API Operations
     # =========================================================================
     
-    def get_video_stats(self, youtube_url: str) -> Dict[str, Any]:
+    def get_video_stats(self, youtube_url: str, full_description: bool = False) -> Dict[str, Any]:
         """
         Get statistics for a YouTube video.
         
         Args:
             youtube_url: YouTube video URL or video ID
+            full_description: Whether to return the full description (default: False, capped at 500 chars)
             
         Returns:
             Dict with video stats or error message
@@ -201,10 +202,14 @@ class YouTubeService:
             snippet = video.get('snippet', {})
             stats = video.get('statistics', {})
             
+            description = snippet.get('description', '') or ''
+            if not full_description:
+                description = description[:500]
+            
             return {
                 "video_id": video_id,
                 "title": snippet.get('title', ''),
-                "description": (snippet.get('description', '') or '')[:500],
+                "description": description,
                 "view_count": self._safe_int(stats.get('viewCount')),
                 "like_count": self._safe_int(stats.get('likeCount')),
                 "comment_count": self._safe_int(stats.get('commentCount')),
@@ -212,6 +217,7 @@ class YouTubeService:
                 "thumbnail_url": snippet.get('thumbnails', {}).get('high', {}).get('url', ''),
                 "channel_id": snippet.get('channelId', ''),
                 "channel_title": snippet.get('channelTitle', ''),
+                "tags": snippet.get('tags', [])
             }
             
         except googleapiclient.errors.HttpError as e:

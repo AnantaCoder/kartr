@@ -481,7 +481,8 @@ class AuthService:
     @staticmethod
     def handle_oauth_callback(
         id_token: str,
-        refresh_token: Optional[str] = None
+        refresh_token: Optional[str] = None,
+        user_type: str = "influencer"
     ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
         """
         Handle OAuth callback by verifying Firebase ID token.
@@ -489,6 +490,7 @@ class AuthService:
         Args:
             id_token: Firebase ID token from client-side auth
             refresh_token: Optional refresh token (not used with Firebase)
+            user_type: User type for new users (influencer/sponsor)
             
         Returns:
             Tuple of (success, user_data, error_message)
@@ -518,7 +520,7 @@ class AuthService:
                 "username": username,
                 "email": email,
                 "password_hash": "",
-                "user_type": "influencer",
+                "user_type": user_type,
                 "date_registered": datetime.utcnow().isoformat(),
                 "email_visible": False,
                 "firebase_uid": decoded.get("uid"),

@@ -13,6 +13,7 @@ from models.schemas import (
     VideoStats,
     ChannelStats,
     AnalyzeVideoRequest,
+    AnalyzeVideoResponse,
     AnalyzeChannelRequest,
     SaveAnalysisRequest,
     YouTubeChannelResponse,
@@ -117,7 +118,31 @@ async def extract_video_info(
     return video_data
 
 
-@router.post("/analyze-video")
+@router.post(
+    "/analyze-video",
+    response_model=AnalyzeVideoResponse,
+    summary="Analyze YouTube Video with AI",
+    description="""
+    Analyzes a YouTube video for influencer marketing and sponsorship information using Gemini AI.
+    
+    **Features:**
+    - Fetches video metadata (title, description, views, likes, etc.)
+    - Uses Gemini AI to analyze the content for sponsorship detection
+    - Identifies sponsor name and industry
+    - Determines influencer niche and content sentiment
+    - Extracts key topics from the video
+    
+    **Response includes:**
+    - Video statistics and metadata
+    - AI-generated analysis with sponsorship details
+    - Raw Gemini response for debugging
+    """,
+    responses={
+        200: {"description": "Video analyzed successfully"},
+        400: {"description": "Invalid video URL"},
+        500: {"description": "Analysis failed"}
+    }
+)
 async def analyze_video(
     request: AnalyzeVideoRequest,
     current_user: dict = Depends(get_current_user)
