@@ -148,20 +148,46 @@ Create a `.env` file with the following variables:
 DEBUG=true
 SECRET_KEY=your-secret-key-min-32-characters
 
-# Supabase (Required for production)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-supabase-anon-key
+# Firebase (Required for production)
+FIREBASE_PROJECT_ID=your-firebase-project-id
+FIREBASE_CREDENTIALS=path-to-firebase-service-account.json
 
 # YouTube API (Optional)
 YOUTUBE_API_KEY=your-youtube-api-key
 
-# Gemini API (Optional, for AI features)
+# Gemini API (Required for AI features)
 GEMINI_API_KEY=your-gemini-api-key
 
-# Email (Optional, for OTP)
+# Gemini Models
+GEMINI_TEXT_MODEL=gemini-2.5-flash
+GEMINI_CHAT_MODEL=gemini-2.5-flash-lite
+GEMINI_IMAGE_MODEL=gemini-2.0-flash-exp-image-generation
+
+# Email/SMTP (Optional, for password reset)
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USE_TLS=true
 ```
+
+### Gemini Model Configuration
+
+All Gemini AI models are configured via `.env` for easy switching:
+
+| Setting | Default Model | Used For |
+|---------|---------------|----------|
+| `GEMINI_TEXT_MODEL` | `gemini-2.5-flash` | Video analysis, Q&A, RAG |
+| `GEMINI_CHAT_MODEL` | `gemini-2.5-flash-lite` | AI chat conversations |
+| `GEMINI_IMAGE_MODEL` | `gemini-2.0-flash-exp-image-generation` | Image generation |
+
+**Available Models:**
+- `gemini-2.5-flash` - Fast, efficient for general text tasks
+- `gemini-2.5-pro` - More capable, better reasoning
+- `gemini-2.5-flash-lite` - Lightweight, optimized for chat
+- `gemini-2.0-flash-exp-image-generation` - Experimental image generation
+
+> **Note:** Free tier has rate limits. For production, enable billing in [Google AI Studio](https://aistudio.google.com/).
 
 ### Supabase Setup for Google OAuth
 

@@ -197,10 +197,35 @@ async def save_analysis(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Save analysis data to CSV file.
+    Save analysis data to Firebase database.
     """
     try:
-        # Create data directory if it doesn't exist
+        from firebase_config import FirestoreRepository, get_firestore
+        from database import is_firebase_configured
+        
+        analysis_data = {
+            "date": datetime.now().isoformat(),
+            "user_id": str(current_user["id"]),
+            "video_title": request.video_title,
+            "channel_name": request.channel_name,
+            "creator_name": request.creator_name,
+            "creator_industry": request.creator_industry,
+            "sponsors": request.sponsors or [],
+            "sponsor_name": request.sponsors[0].get("name", "No Sponsor") if request.sponsors else "No Sponsor",
+            "sponsor_industry": request.sponsors[0].get("industry", "N/A") if request.sponsors else "N/A",
+        }
+        
+        # Try Firebase first
+        if is_firebase_configured():
+            analyses_repo = FirestoreRepository('video_analyses')
+            result = analyses_repo.create(analysis_data)
+            if result:
+                logger.info(f"Analysis saved to Firebase: {result.get('id')}")
+                return MessageResponse(success=True, message="Analysis saved successfully")
+            else:
+                logger.warning("Failed to save to Firebase, falling back to CSV")
+        
+        # Fallback to CSV if Firebase fails or not configured
         data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
         os.makedirs(data_dir, exist_ok=True)
         
@@ -210,14 +235,12 @@ async def save_analysis(
         with open(csv_file, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             
-            # Write header if file doesn't exist
             if not file_exists:
                 writer.writerow([
                     'Date', 'User ID', 'Video/Channel Title', 'Channel Name',
                     'Creator Name', 'Creator Industry', 'Sponsor Name', 'Sponsor Industry'
                 ])
             
-            # Write data
             if not request.sponsors:
                 writer.writerow([
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -242,7 +265,7 @@ async def save_analysis(
                         sponsor.get('industry', 'Unknown')
                     ])
         
-        return MessageResponse(success=True, message="Analysis saved successfully")
+        return MessageResponse(success=True, message="Analysis saved successfully (CSV fallback)")
         
     except Exception as e:
         logger.error(f"Error saving analysis: {e}")

@@ -38,10 +38,16 @@ class Settings(BaseSettings):
     
     # Gemini API
     GEMINI_API_KEY: str = ""
+    GEMINI_TEXT_MODEL: str = "gemini-2.5-flash"  # For text generation, analysis, Q&A
+    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash-lite"  # For chat conversations
+    GEMINI_IMAGE_MODEL: str = "gemini-2.0-flash-exp-image-generation"  # For image generation
     
-    # Email settings
+    # Email/SMTP settings
     EMAIL_USER: str = ""
     EMAIL_PASSWORD: str = ""
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USE_TLS: bool = True
     
     # Bluesky settings
     BLUESKY_HANDLE: str = ""

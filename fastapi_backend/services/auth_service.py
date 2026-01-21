@@ -417,6 +417,8 @@ class AuthService:
         Returns:
             Tuple of (success, error_message)
         """
+        from services.email_service import EmailService
+        
         if not email:
             return False, "Email is required"
         
@@ -425,28 +427,37 @@ class AuthService:
         logger.info(f"Password reset requested for: {email}")
         
         try:
-            # Check if user exists
+            # Check if user exists - reject if not found
             user = AuthService.get_user_by_email(email)
             if not user:
-                # Don't reveal if email exists for security
-                logger.debug(f"Password reset: user not found - {email}")
-                return True, None  # Return success anyway for security
+                logger.info(f"Password reset rejected: email not found - {email}")
+                return False, "Email not found. Please register first."
             
-            # Try Firebase password reset
+            # Try Firebase password reset link
             if is_firebase_configured():
                 link = generate_password_reset_link(email)
                 if link:
-                    # In production, send this link via email
-                    logger.info(f"Password reset link generated for: {email}")
-                    return True, None
+                    # Send the reset link via email
+                    success, error = EmailService.send_password_reset_link_email(email, link)
+                    if success:
+                        logger.info(f"Password reset link email sent to: {email}")
+                        return True, None
+                    else:
+                        logger.warning(f"Failed to send reset link email: {error}")
+                        # Fall through to OTP if email fails
             
             # Fallback to OTP
             from utils.security import generate_otp, store_otp
             otp = generate_otp()
             if store_otp(email, otp):
-                logger.info(f"OTP generated for password reset: {email}")
-                # In production, send OTP via email
-                return True, None
+                # Send OTP via email
+                success, error = EmailService.send_password_reset_email(email, otp)
+                if success:
+                    logger.info(f"Password reset OTP email sent to: {email}")
+                    return True, None
+                else:
+                    logger.error(f"Failed to send password reset OTP email: {error}")
+                    return False, f"Failed to send email: {error}"
             
             return False, "Failed to initiate password reset"
             

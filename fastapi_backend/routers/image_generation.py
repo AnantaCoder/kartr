@@ -24,22 +24,61 @@ async def generate_promotional_image(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Generate a promotional image with face and brand integration.
+    Generate a promotional image using Gemini AI.
+    
+    - **prompt**: Description of the image to generate
+    - **brand_name**: Brand name to incorporate (optional)
+    - **face_image**: Optional face image for reference
+    - **brand_image**: Optional brand logo/image for reference
+    
+    Requires authentication.
     """
     try:
-        if not face_image or not brand_image:
+        if not settings.GEMINI_API_KEY:
             return ImageGenerationResponse(
                 success=False,
-                error="Both face_image and brand_image are required"
+                error="Gemini API key not configured"
             )
         
-        # For now, return placeholder response
-        # In production, integrate with image generation service
+        # Use google.genai (new package) for image generation
+        from google import genai
+        from google.genai import types
+        
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        
+        # Build the prompt with brand context
+        full_prompt = f"Generate a professional promotional image for {brand_name}. {prompt}"
+        
+        # Generate the image
+        response = client.models.generate_content(
+            model=settings.GEMINI_IMAGE_MODEL,
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=['TEXT', 'IMAGE']
+            )
+        )
+        
+        # Extract the image from response
+        if response.candidates and response.candidates[0].content.parts:
+            for part in response.candidates[0].content.parts:
+                if part.inline_data and part.inline_data.mime_type.startswith('image/'):
+                    # Return base64 encoded image
+                    image_base64 = base64.b64encode(part.inline_data.data).decode('utf-8')
+                    return ImageGenerationResponse(
+                        success=True,
+                        image_base64=image_base64
+                    )
+        
         return ImageGenerationResponse(
             success=False,
-            error="Image generation service coming soon. Please configure Gemini or other image API."
+            error="No image generated. The model may not support image generation or the prompt was rejected."
         )
                 
+    except ImportError:
+        return ImageGenerationResponse(
+            success=False,
+            error="Google GenAI package not installed. Run: pip install google-genai"
+        )
     except Exception as e:
         logger.error(f"Image generation error: {e}")
         return ImageGenerationResponse(
