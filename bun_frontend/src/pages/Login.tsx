@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff } from 'lucide-react';
 import KartrLine from '../components/KartrLine.tsx';
+import bg_img from "../assets/auth/bg_img.png";
 
 const Login: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -34,9 +35,9 @@ const Login: React.FC = () => {
     };
 
     return (
-        <motion.div className="flex flex-col min-h-screen mb-12 justify-between" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
-            <div className="flex items-center justify-center flex-1">
-                <Card className="w-full max-w-lg bg-white/90 backdrop-blur-md shadow-2xl border-0 mt-5">
+        <motion.div className="flex flex-col min-h-screen  justify-between" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
+            <div className="flex items-center justify-center flex-1  "style={{ backgroundImage: `url(${bg_img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <Card className="w-full max-w-lg bg-white/90 backdrop-blur-md shadow-2xl border-0 mt-5  " >
                     <CardHeader className="text-center pb-8">
                         <CardTitle className="text-4xl font-bold text-gray-800 mb-2 font-serif">Welcome Back</CardTitle>
                         <CardDescription className="text-lg text-gray-600">Login in to your account to continue</CardDescription>

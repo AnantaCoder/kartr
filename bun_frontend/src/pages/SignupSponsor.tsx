@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff } from 'lucide-react';
 import KartrLine from '../components/KartrLine.tsx';
+import bg_img from "../assets/auth/bg_img.png";
+
 
 const SignupSponsor: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -34,8 +36,9 @@ const SignupSponsor: React.FC = () => {
   };
 
   return (
-    <motion.div className="flex items-center justify-center mb-12 min-h-screen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
-      <Card className="w-full max-w-lg bg-white/90 backdrop-blur-md shadow-2xl border-0 my-12">
+    <motion.div className="flex items-center justify-center mb-12 min-h-screen" style={{ backgroundImage: `url(${bg_img})`, backgroundSize: 'cover', backgroundPosition: 'center' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
+      <Card className="w-full max-w-lg bg-white/90 backdrop-blur-md shadow-2xl border-0 my-12 bg-gradient-to-br 
+  from-[#f6f7ff] via-[#f3e8ff] to-[#eaf6ff]" >
         <CardHeader className="text-center pb-8">
           <CardTitle className="text-4xl font-bold text-gray-800 mb-2">Sign Up as Sponsor</CardTitle>
           <CardDescription className="text-lg text-gray-600">Join our platform and start sponsoring</CardDescription>

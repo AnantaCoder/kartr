@@ -2,7 +2,7 @@
 export * from "./types";
 
 // Schemas
-export * from "./schemas";
+export * from "./schemas/authSchema";
 
 // API
 export * from "./api";
