@@ -1,4 +1,4 @@
-import bgVideo from "../assets/auth/bg_video.mp4";
+import bgVideo from "../../assets/auth/bg_video.mp4";
 
 export default function BackgroundVideo() {
   return (

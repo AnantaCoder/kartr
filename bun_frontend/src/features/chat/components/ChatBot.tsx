@@ -2,12 +2,12 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { MessageCircle, X, Send } from "lucide-react"
 import { useDispatch, useSelector } from "react-redux"
-import { sendChatMessage, addUserMessage } from "../features/auth/slices/chatSlice"
+import { sendChatMessage, addUserMessage } from "../features/slices/chatSlice"
 import type { RootState, AppDispatch } from "../app/store"
 
 const ChatBox = () => {
   const [open, setOpen] = useState(false)
-  function chatBotclick(){
+  function chatBotclick() {
     setOpen(!open);
   }
 

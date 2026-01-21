@@ -5,34 +5,45 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import jwt, JWTError
-from passlib.context import CryptContext
+import bcrypt as bcrypt_lib
 from config import settings
 
 logger = logging.getLogger(__name__)
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def _prepare_password(password: str) -> bytes:
+    """Prepare password for bcrypt by encoding and truncating to 72 bytes."""
+    password_bytes = password.encode('utf-8')
+    # bcrypt has a hard limit of 72 bytes
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    return password_bytes
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt"""
-    # Ensure password is encoded properly for bcrypt
-    # bcrypt 5.0.0+ requires the password to be bytes or str < 72 chars
-    if len(password.encode('utf-8')) > 72:
-        # Truncate to 72 bytes (bcrypt limit) - this is standard bcrypt behavior
-        password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt directly."""
+    try:
+        password_bytes = _prepare_password(password)
+        salt = bcrypt_lib.gensalt()
+        hashed = bcrypt_lib.hashpw(password_bytes, salt)
+        return hashed.decode('utf-8')
+    except Exception as e:
+        logger.error(f"Password hashing error: {e}")
+        raise
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
+    """Verify a password against its hash using bcrypt directly."""
     try:
-        # bcrypt 4.1.0+ enforces 72-byte limit strictly before passlib can handle it
-        # Always truncate to 72 bytes to prevent the error
-        password_bytes = plain_password.encode('utf-8')
-        if len(password_bytes) > 72:
-            plain_password = password_bytes[:72].decode('utf-8', errors='ignore')
-        return pwd_context.verify(plain_password, hashed_password)
+        # Handle empty or invalid hash
+        if not hashed_password:
+            logger.warning("Empty password hash provided")
+            return False
+        
+        password_bytes = _prepare_password(plain_password)
+        hashed_bytes = hashed_password.encode('utf-8')
+        
+        return bcrypt_lib.checkpw(password_bytes, hashed_bytes)
     except Exception as e:
         logger.error(f"Password verification error: {e}")
         return False

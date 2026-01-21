@@ -1,15 +1,14 @@
 // Types
 export * from "./types";
 
-// Schemas
-export * from "./schemas/authSchema";
+// Schemas - re-exported from features/schemas
+export * from "../schemas/authSchema";
 
 // API
 export * from "./api";
 
-// Slice
-export {
-  default as authReducer,
+// Slice - re-exported from features/slices
+import authReducerDefault, {
   login,
   registerInfluencer,
   registerSponsor,
@@ -25,4 +24,23 @@ export {
   selectAuthLoading,
   selectAuthError,
   selectAuthInitialized,
-} from "./slices/authSlice";
+} from "../../store/slices/authSlice";
+
+export const authReducer = authReducerDefault;
+export {
+  login,
+  registerInfluencer,
+  registerSponsor,
+  fetchCurrentUser,
+  logout,
+  setCredentials,
+  clearAuth,
+  clearError,
+  setInitialized,
+  selectUser,
+  selectToken,
+  selectIsAuthenticated,
+  selectAuthLoading,
+  selectAuthError,
+  selectAuthInitialized,
+};

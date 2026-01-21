@@ -55,13 +55,23 @@ bun_frontend/
 │   │   ├── rootReducer.ts      # Combined reducers
 │   │   └── hooks.ts            # Typed Redux hooks (useAppDispatch, useAppSelector)
 │   │
-│   ├── features/               # Feature-based modules (Redux slices + related code)
+│   ├── features/               # Feature-based modules
 │   │   ├── auth/               # Authentication feature
-│   │   │   ├── index.ts        # Barrel exports
+│   │   │   ├── index.ts        # Barrel exports (re-exports from slices/schemas)
 │   │   │   ├── api/            # Auth API calls
-│   │   │   ├── slices/         # Redux slices
-│   │   │   ├── schemas/        # Zod validation schemas
 │   │   │   └── types/          # TypeScript types
+│   │   │
+│   │   ├── slices/             # All Redux slices (centralized)
+│   │   │   ├── index.ts        # Barrel exports
+│   │   │   ├── authSlice.ts    # Authentication state
+│   │   │   ├── youtubeSlice.ts # YouTube analytics state
+│   │   │   └── chatSlice.ts    # Chat state management
+│   │   │
+│   │   ├── schemas/            # All schemas (centralized)
+│   │   │   ├── index.ts        # Barrel exports
+│   │   │   ├── authSchema.ts   # Auth Zod validation schemas
+│   │   │   ├── youtubeSchema.ts # YouTube types
+│   │   │   └── chatSchema.ts   # Chat types
 │   │   │
 │   │   └── youtube/            # YouTube analytics feature
 │   │
@@ -214,23 +224,34 @@ The build process:
 
 ### Feature-Based Architecture
 
-The codebase follows a **feature-based architecture** where each feature is self-contained:
+The codebase follows a **feature-based architecture** with centralized slices and schemas:
 
 ```
 features/
-└── auth/
-    ├── index.ts       # Barrel exports (public API)
-    ├── api/           # Feature-specific API calls
-    ├── slices/        # Redux slices (reducers + actions)
-    ├── schemas/       # Zod validation schemas
-    └── types/         # TypeScript types/interfaces
+├── auth/                    # Auth feature (uses centralized slices/schemas)
+│   ├── index.ts             # Barrel exports (re-exports from slices/schemas)
+│   ├── api/                 # Feature-specific API calls
+│   └── types/               # TypeScript types/interfaces
+│
+├── slices/                  # All Redux slices (centralized)
+│   ├── index.ts             # Barrel exports
+│   ├── authSlice.ts         # Authentication state
+│   ├── youtubeSlice.ts      # YouTube analytics state
+│   └── chatSlice.ts         # Chat state management
+│
+└── schemas/                 # All schemas (centralized)
+    ├── index.ts             # Barrel exports
+    ├── authSchema.ts        # Auth Zod validation schemas
+    ├── youtubeSchema.ts     # YouTube types
+    └── chatSchema.ts        # Chat types
 ```
 
 **Benefits:**
-- ✅ High cohesion - related code stays together
+- ✅ Centralized state management - all slices in one place
+- ✅ Centralized schema definitions - all types in one place
 - ✅ Easy to navigate and maintain
 - ✅ Scales well as the app grows
-- ✅ Clear boundaries between features
+- ✅ Clear separation between feature logic (api, types) and state/schemas
 
 ### State Management (Redux Toolkit)
 

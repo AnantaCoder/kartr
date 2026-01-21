@@ -1,4 +1,4 @@
-import type { YoutubeResult } from "@/features/auth/schemas/youtubeSchema"
+import type { YoutubeResult } from "@/features/schemas/youtubeSchema"
 import dummyimg from "../assets/auth/analytics_img2.png";
 
 type Props = {
@@ -23,7 +23,7 @@ const YoutubeResultCard: React.FC<Props> = ({ result }: Props) => {
 
   return (
     <div className="overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-md">
-      
+
       {/* THUMBNAIL */}
       <div className="w-full bg-gray-100">
         <img

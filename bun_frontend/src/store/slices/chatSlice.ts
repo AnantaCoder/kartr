@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
-import type { ChatMessage } from "../schemas/chatSchema.ts"
+import type { ChatMessage } from "../schemas/chatSchema"
 import { v4 as uuid } from "uuid"
 
 type ChatState = {

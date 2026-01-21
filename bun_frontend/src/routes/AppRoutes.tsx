@@ -2,9 +2,12 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
-import SignupInfluencer from '@/pages/SignupInfluencer';
-import SignupSponsor from '@/pages/SignupSponsor';
-import YoutubeAnalysis from '@/pages/YoutubeAnalysis';
+import SignupInfluencer from '../pages/SignupInfluencer';
+import SignupSponsor from '../pages/SignupSponsor';
+import YoutubeAnalysis from '../pages/YoutubeAnalysis';
+import ForgotPassword from '../pages/ForgotPassword';
+import Header from "../components/layout/Header";
+import Footer from "../components/layout/Footer";
 
 const AppRoutes: React.FC = () => {
     return (
@@ -14,6 +17,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/signup-influencer" element={<SignupInfluencer />} />
             <Route path="/signup-sponsor" element={<SignupSponsor />} />
             <Route path="/YoutubeAnalysis" element={<YoutubeAnalysis />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>
     );
 };
