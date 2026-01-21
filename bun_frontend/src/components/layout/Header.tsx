@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, Menu, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import KartrLine from "../common/KartrLine";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUser, selectIsAuthenticated, logout } from "../../store/slices/authSlice";
+import type { AppDispatch } from "../../store/store";
 
 const navItems = [
   { label: "Home", href: "/" },
@@ -15,6 +18,17 @@ const navItems = [
 const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login");
+    setMenuOpen(false);
+  };
 
   // Close menu on route change
   useEffect(() => {
@@ -83,21 +97,39 @@ const Header: React.FC = () => {
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Login/Signup buttons - hidden on mobile, show on md+ */}
               <div className="hidden md:flex items-center gap-2">
-                <Link to="/login">
-                  <Button
-                    variant="ghost"
-                    className="text-gray-300 hover:text-white hover:bg-white/10"
-                  >
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/signup-influencer">
-                  <Button
-                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/25"
-                  >
-                    Get Started
-                  </Button>
-                </Link>
+                {isAuthenticated && user ? (
+                  <div className="flex items-center gap-4">
+                    <span className="text-gray-300 text-sm font-medium">
+                      Hello, {user.username}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      className="text-gray-300 hover:text-white hover:bg-white/10"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Link to="/login">
+                      <Button
+                        variant="ghost"
+                        className="text-gray-300 hover:text-white hover:bg-white/10"
+                      >
+                        Login
+                      </Button>
+                    </Link>
+                    <Link to="/signup-influencer">
+                      <Button
+                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/25"
+                      >
+                        Get Started
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
 
               {/* Hamburger - visible until lg */}
@@ -166,21 +198,39 @@ const Header: React.FC = () => {
 
                 {/* Auth Buttons - visible on mobile */}
                 <div className="flex flex-col sm:flex-row gap-3 md:hidden">
-                  <Link to="/login" className="flex-1">
-                    <Button
-                      variant="outline"
-                      className="w-full border-white/20 text-white hover:bg-white/10"
-                    >
-                      Login
-                    </Button>
-                  </Link>
-                  <Link to="/signup-influencer" className="flex-1">
-                    <Button
-                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
-                    >
-                      Get Started
-                    </Button>
-                  </Link>
+                  {isAuthenticated && user ? (
+                    <>
+                      <div className="w-full px-4 py-2 text-gray-300 text-sm font-medium border border-white/10 rounded-lg text-center">
+                        Signed in as {user.username}
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full border-white/20 text-white hover:bg-white/10"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" className="flex-1">
+                        <Button
+                          variant="outline"
+                          className="w-full border-white/20 text-white hover:bg-white/10"
+                        >
+                          Login
+                        </Button>
+                      </Link>
+                      <Link to="/signup-influencer" className="flex-1">
+                        <Button
+                          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+                        >
+                          Get Started
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>
