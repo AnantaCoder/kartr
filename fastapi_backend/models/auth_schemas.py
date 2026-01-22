@@ -30,6 +30,8 @@ class UserResponse(BaseModel):
     full_name: Optional[str] = ""
     date_registered: Union[datetime, str]  # Accept both datetime and ISO string
     email_visible: bool = False
+    bluesky_handle: Optional[str] = None
+    # Never return bluesky_password
 
     class Config:
         from_attributes = True

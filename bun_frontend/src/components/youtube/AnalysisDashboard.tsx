@@ -34,13 +34,15 @@ interface Props {
 }
 
 const AnalysisDashboard: React.FC<Props> = ({ result }) => {
+    console.log("AnalysisDashboard DEBUG:", result);
     const {
         title,
         thumbnail_url,
         channel_name,
         view_count,
         like_count,
-        analysis
+        analysis,
+        model_used
     } = result;
 
     const isSponsored = analysis?.is_sponsored;
@@ -48,6 +50,7 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
     const sponsorIndustry = analysis?.sponsor_industry || "N/A";
     const influencerNiche = analysis?.influencer_niche || "General";
     const sentiment = analysis?.sentiment || "Neutral";
+    const contentSummary = analysis?.content_summary || "";
     const keyTopics = analysis?.key_topics || [];
 
     const engagementData = [
@@ -55,16 +58,24 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
         { name: "Likes", value: like_count, fill: "#34d399" },
     ];
 
-    const sentimentData = [
+    let sentimentData = [
         { name: "Positive", value: 70, color: "#10b981" },
         { name: "Neutral", value: 20, color: "#9ca3af" },
         { name: "Negative", value: 10, color: "#ef4444" },
     ];
 
-    if (sentiment.toLowerCase().includes("positive")) {
-        sentimentData[0].value = 85; sentimentData[1].value = 10; sentimentData[2].value = 5;
-    } else if (sentiment.toLowerCase().includes("negative")) {
-        sentimentData[0].value = 20; sentimentData[1].value = 20; sentimentData[2].value = 60;
+    if (sentiment?.toLowerCase().includes("positive")) {
+        sentimentData = [
+            { name: "Positive", value: 85, color: "#10b981" },
+            { name: "Neutral", value: 10, color: "#9ca3af" },
+            { name: "Negative", value: 5, color: "#ef4444" },
+        ];
+    } else if (sentiment?.toLowerCase().includes("negative")) {
+        sentimentData = [
+            { name: "Positive", value: 20, color: "#10b981" },
+            { name: "Neutral", value: 20, color: "#9ca3af" },
+            { name: "Negative", value: 60, color: "#ef4444" },
+        ];
     }
 
     const containerVariants = {
@@ -121,20 +132,28 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-gradient-to-br from-indigo-500/20 to-indigo-900/20 border border-indigo-500/30 rounded-2xl p-4 flex flex-col items-center justify-center group/stat hover:bg-indigo-500/30 transition-colors">
                                     <Eye className="w-5 h-5 text-indigo-400 mb-2 group-hover/stat:scale-110 transition-transform" />
-                                    <span className="text-white font-bold text-lg">{view_count.toLocaleString()}</span>
+                                    <span className="text-white font-bold text-lg">{view_count?.toLocaleString() || "0"}</span>
                                     <span className="text-[10px] text-indigo-300 uppercase tracking-wider font-semibold">Views</span>
                                 </div>
                                 <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-900/20 border border-emerald-500/30 rounded-2xl p-4 flex flex-col items-center justify-center group/stat hover:bg-emerald-500/30 transition-colors">
                                     <ThumbsUp className="w-5 h-5 text-emerald-400 mb-2 group-hover/stat:scale-110 transition-transform" />
-                                    <span className="text-white font-bold text-lg">{like_count.toLocaleString()}</span>
+                                    <span className="text-white font-bold text-lg">{like_count?.toLocaleString() || "0"}</span>
                                     <span className="text-[10px] text-emerald-300 uppercase tracking-wider font-semibold">Likes</span>
                                 </div>
                             </div>
 
-                            <Button className="w-full mt-5 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 rounded-xl h-11 transition-all group-hover:border-indigo-500/30">
-                                <ExternalLink className="w-4 h-4 mr-2" />
-                                View on YouTube
-                            </Button>
+                            <div className="flex items-center justify-between mt-4">
+                                <Button className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 rounded-xl h-11 transition-all group-hover:border-indigo-500/30 mr-2">
+                                    <ExternalLink className="w-4 h-4 mr-2" />
+                                    View on YouTube
+                                </Button>
+                                {model_used && (
+                                    <div className="px-3 py-1 rounded-xl bg-slate-800/50 border border-white/5 text-[10px] text-gray-500 font-mono flex flex-col items-center justify-center h-11">
+                                        <span className="opacity-50 uppercase tracking-wider">AI Model</span>
+                                        <span className="text-gray-300 font-semibold">{model_used}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -158,6 +177,20 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                             ))}
                         </div>
                     </div>
+
+                    {/* Content Summary */}
+                    {contentSummary && (
+                        <div className="bg-gradient-to-b from-slate-900/80 to-slate-900/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                            <div className="absolute -top-10 -left-10 w-32 h-32 bg-blue-500/20 blur-3xl rounded-full pointer-events-none" />
+                            <div className="flex items-center gap-3 mb-4 relative z-10">
+                                <div className="p-2 bg-blue-500/20 rounded-lg">
+                                    <Share2 className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <h3 className="font-bold text-white text-lg">AI Summary</h3>
+                            </div>
+                            <p className="text-gray-300 text-sm leading-relaxed relative z-10">{contentSummary}</p>
+                        </div>
+                    )}
                 </motion.div>
 
 
@@ -292,7 +325,7 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
 
                             <div className="flex-1 w-full relative min-h-[220px]">
                                 <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
-                                    <span className="text-4xl font-black text-white drop-shadow-lg">{sentimentData[0].value}%</span>
+                                    <span className="text-4xl font-black text-white drop-shadow-lg">{sentimentData[0]?.value ?? 0}%</span>
                                     <span className="text-xs text-emerald-400 font-medium uppercase tracking-wider bg-emerald-400/10 px-2 py-0.5 rounded-full mt-1">Positive</span>
                                 </div>
                                 <ResponsiveContainer width="100%" height="100%">

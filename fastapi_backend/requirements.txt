@@ -29,3 +29,9 @@ aiofiles>=23.2.1
 
 # Firebase (Database & Authentication)
 firebase-admin>=6.2.0
+
+# bluesky
+atproto==0.0.65
+
+# AI Clients
+openai==2.15.0

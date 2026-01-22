@@ -1,5 +1,5 @@
 """
-Service for AI-powered video analysis using Gemini.
+Service for AI-powered video analysis using Gemini with Grok (xAI) fallback.
 """
 import logging
 import json
@@ -10,12 +10,21 @@ from services.youtube_service import youtube_service
 
 logger = logging.getLogger(__name__)
 
+# Initialize Gemini
 GEMINI_AVAILABLE = False
 try:
     import google.generativeai as genai
     GEMINI_AVAILABLE = True
 except ImportError:
-    logger.warning("google-generativeai not installed. Gemini analysis unavailable.")
+    logger.warning("google-generativeai not installed.")
+
+# Initialize OpenAI (for Grok)
+OPENAI_AVAILABLE = False
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    logger.warning("openai library not installed. Grok fallback unavailable.")
 
 if GEMINI_AVAILABLE and settings.GEMINI_API_KEY:
     try:
@@ -24,15 +33,46 @@ if GEMINI_AVAILABLE and settings.GEMINI_API_KEY:
         logger.error(f"Failed to configure Gemini: {e}")
         GEMINI_AVAILABLE = False
 
+
+def _generate_with_fallback(prompt: str) -> tuple[Optional[str], str]:
+    """
+    Generate content using Gemini, falling back to Grok if it fails.
+    Returns (raw_text_response, model_name) tuple.
+    """
+    # 1. Try Gemini
+    if GEMINI_AVAILABLE:
+        try:
+            model = genai.GenerativeModel(settings.GEMINI_TEXT_MODEL)
+            response = model.generate_content(prompt)
+            if response.text:
+                return response.text, settings.GEMINI_TEXT_MODEL
+        except Exception as e:
+            logger.warning(f"Gemini analysis failed: {e}. Attempting fallback...")
+    
+    # 2. Fallback to Grok (xAI)
+    if OPENAI_AVAILABLE and settings.GROK_API_KEY:
+        try:
+            client = OpenAI(
+                api_key=settings.GROK_API_KEY,
+                base_url="https://api.x.ai/v1",
+            )
+            response = client.chat.completions.create(
+                model=settings.GROK_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a helpful AI assistant analyzing YouTube videos."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.choices[0].message.content, settings.GROK_MODEL
+        except Exception as e:
+            logger.error(f"Grok fallback failed: {e}")
+    
+    return None, "None"
+
+
 def analyze_influencer_sponsors(video_url: str) -> Dict[str, Any]:
     """
-    Analyze a YouTube video for influencer and sponsor information using Gemini AI.
-    
-    Args:
-        video_url: The URL of the YouTube video to analyze.
-        
-    Returns:
-        A dictionary containing the analysis results.
+    Analyze a YouTube video for influencer and sponsor information.
     """
     # Get video stats first
     video_data = youtube_service.get_video_stats(video_url, full_description=True)
@@ -40,44 +80,38 @@ def analyze_influencer_sponsors(video_url: str) -> Dict[str, Any]:
     if not video_data or "error" in video_data:
         return video_data or {"error": "Could not fetch video data"}
         
-    if not GEMINI_AVAILABLE:
+    if not GEMINI_AVAILABLE and not (OPENAI_AVAILABLE and settings.GROK_API_KEY):
         return {
             **video_data,
-            "analysis": {"error": "Gemini AI not available or configured"}
+            "analysis": {"error": "No AI services avaliable (Gemini or Grok)"}
         }
 
-    # Prepare prompt for Gemini
+    # Prepare prompt
     prompt = _create_analysis_prompt(video_data)
     
-    try:
-        model = genai.GenerativeModel(settings.GEMINI_TEXT_MODEL)
-        response = model.generate_content(prompt)
-        
-        # Store raw response text
-        raw_response_text = response.text if response.text else ""
-        
-        # Parse JSON from response
-        if response.text:
-            analysis = _parse_gemini_response(response.text)
-        else:
-            analysis = {"error": "Empty response from AI"}
-        
+    # Call LLM with fallback
+    response_text, model_used = _generate_with_fallback(prompt)
+    
+    if not response_text:
         return {
             **video_data,
-            "analysis": analysis,
-            "gemini_raw_response": raw_response_text
-        }
-        
-    except Exception as e:
-        logger.error(f"Gemini analysis error: {e}")
-        return {
-            **video_data,
-            "analysis": {"error": f"AI analysis failed: {str(e)}"},
-            "gemini_raw_response": None
+            "analysis": {"error": "AI analysis failed (Both Gemini and Fallback)"},
+            "gemini_raw_response": None,
+            "model_used": "None"
         }
 
+    # Parse Result
+    analysis = _parse_llm_response(response_text)
+    
+    return {
+        **video_data,
+        "analysis": analysis,
+        "raw_response": response_text,
+        "model_used": model_used
+    }
+
 def _create_analysis_prompt(video_data: Dict[str, Any]) -> str:
-    """Create the prompt for Gemini analysis."""
+    """Create the prompt for analysis."""
     title = video_data.get("title", "")
     channel = video_data.get("channel_title", "")
     description = video_data.get("description", "")
@@ -93,7 +127,7 @@ def _create_analysis_prompt(video_data: Dict[str, Any]) -> str:
     Description:
     {description[:3000]}
     
-    Please provide a structured JSON response with the following keys:
+    Please provide a structured JSON response with the following keys (use snake_case):
     - is_sponsored (boolean): Is this video sponsored?
     - sponsor_name (string): Name of the sponsor (or "None")
     - sponsor_industry (string): Industry of the sponsor
@@ -105,7 +139,7 @@ def _create_analysis_prompt(video_data: Dict[str, Any]) -> str:
     Return ONLY the valid JSON object. Do not include markdown formatting.
     """
 
-def _parse_gemini_response(text: str) -> Dict[str, Any]:
+def _parse_llm_response(text: str) -> Dict[str, Any]:
     """Clean and parse JSON from LLM response."""
     try:
         text = text.strip()
@@ -118,8 +152,27 @@ def _parse_gemini_response(text: str) -> Dict[str, Any]:
         if text.endswith("```"):
             text = text[:-3]
             
-        return json.loads(text.strip())
+        data = json.loads(text.strip())
+        
+        # Normalize keys to snake_case (handle camelCase from LLM)
+        normalized_data = {}
+        key_mapping = {
+            "isSponsored": "is_sponsored",
+            "sponsorName": "sponsor_name",
+            "sponsorIndustry": "sponsor_industry", 
+            "influencerNiche": "influencer_niche",
+            "contentSummary": "content_summary",
+            "keyTopics": "key_topics"
+        }
+        
+        for key, value in data.items():
+            # Use mapped key if exists, otherwise existing key
+            new_key = key_mapping.get(key, key)
+            normalized_data[new_key] = value
+            
+        return normalized_data
+        
     except json.JSONDecodeError:
-        logger.error(f"Failed to parse Gemini response: {text[:100]}...")
+        logger.error(f"Failed to parse LLM response: {text[:100]}...")
         # Handle case where AI might return text that isn't JSON
         return {"error": "Failed to parse AI response", "raw_response": text[:200]}

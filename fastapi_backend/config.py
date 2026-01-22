@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     GEMINI_CHAT_MODEL: str = "gemini-2.5-flash-lite"  # For chat conversations
     GEMINI_IMAGE_MODEL: str = "gemini-2.0-flash-exp-image-generation"  # For image generation
     
+    # Grok API (xAI) - Fallback
+    GROK_API_KEY: str = ""
+    GROK_MODEL: str = "grok-2-latest"
+
+    
     # Email/SMTP settings
     EMAIL_USER: str = ""
     EMAIL_PASSWORD: str = ""

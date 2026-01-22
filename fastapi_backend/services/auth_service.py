@@ -376,7 +376,11 @@ class AuthService:
         
         # Never allow updating sensitive fields via this method
         protected_fields = {"id", "password_hash", "email", "firebase_uid"}
-        data = {k: v for k, v in data.items() if k not in protected_fields}
+        
+        # Allow updating bluesky_password securely
+        allowed_extra_fields = {"bluesky_handle", "bluesky_password"}
+        
+        data = {k: v for k, v in data.items() if k not in protected_fields or k in allowed_extra_fields}
         
         if not data:
             return None

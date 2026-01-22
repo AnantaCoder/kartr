@@ -9,6 +9,8 @@ export type YoutubeAnalysis = {
   sponsor_name?: string
   sponsor_industry?: string
   influencer_niche?: string
+  content_summary?: string
+  sentiment?: string
   key_topics?: string[]
   error?: string
 }
@@ -32,4 +34,5 @@ export type YoutubeResult = {
   sponsors?: Sponsor[]
 
   analysis?: YoutubeAnalysis
+  model_used?: string
 }

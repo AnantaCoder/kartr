@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchYoutubeResults, clearResults } from "../store/slices/youtubeSlice";
 import type { RootState, AppDispatch } from "../store/store";
-import YoutubeResults from "../features/youtube/components/YoutubeResults";
+import YoutubeResults from "../components/youtube/YoutubeResults";
 
 const YouTubeAnalysis: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();

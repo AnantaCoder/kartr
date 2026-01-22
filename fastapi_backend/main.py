@@ -33,6 +33,7 @@ from routers.image_generation import router as image_generation_router
 from routers.visualization import router as visualization_router
 from routers.utilities import router as utilities_router
 from routers.chat import router as chat_router
+from routers.bluesky import router as bluesky_router
 
 # Configure logging
 logging.basicConfig(
@@ -85,6 +86,7 @@ app.include_router(image_generation_router)
 app.include_router(visualization_router)
 app.include_router(utilities_router)
 app.include_router(chat_router)
+app.include_router(bluesky_router)
 
 
 @app.get("/")

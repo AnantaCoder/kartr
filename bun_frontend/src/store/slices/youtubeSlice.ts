@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
-import type { YoutubeResult, YoutubeAnalysis } from "../schemas/youtubeSchema"
+import type { YoutubeResult, YoutubeAnalysis } from "../../features/schemas/youtubeSchema"
 import apiClient from "../../services/apiClient"
 
 type YoutubeState = {
@@ -38,6 +38,7 @@ interface AnalyzeVideoResponse {
     error?: string
   }
   gemini_raw_response?: string
+  model_used?: string
   error?: string
 }
 
@@ -58,11 +59,14 @@ const transformResponse = (data: AnalyzeVideoResponse): YoutubeResult => {
     creator_name: data.channel_title,
     creator_industry: data.analysis?.influencer_niche,
     sponsors,
+    model_used: data.model_used,
     analysis: data.analysis ? {
       is_sponsored: data.analysis.is_sponsored,
       sponsor_name: data.analysis.sponsor_name,
       sponsor_industry: data.analysis.sponsor_industry,
       influencer_niche: data.analysis.influencer_niche,
+      content_summary: data.analysis.content_summary,
+      sentiment: data.analysis.sentiment,
       key_topics: data.analysis.key_topics,
       error: data.analysis.error,
     } : undefined

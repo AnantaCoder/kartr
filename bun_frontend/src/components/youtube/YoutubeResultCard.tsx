@@ -1,5 +1,5 @@
 import type { YoutubeResult } from "@/features/schemas/youtubeSchema"
-import dummyimg from "../assets/auth/analytics_img2.png";
+import dummyimg from "@/assets/auth/analytics_img2.png";
 
 type Props = {
   result: YoutubeResult

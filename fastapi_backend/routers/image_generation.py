@@ -50,13 +50,31 @@ async def generate_promotional_image(
         full_prompt = f"Generate a professional promotional image for {brand_name}. {prompt}"
         
         # Generate the image
-        response = client.models.generate_content(
-            model=settings.GEMINI_IMAGE_MODEL,
-            contents=full_prompt,
-            config=types.GenerateContentConfig(
-                response_modalities=['TEXT', 'IMAGE']
+        try:
+            logger.info(f"Attempting image generation with model: {settings.GEMINI_IMAGE_MODEL}")
+            response = client.models.generate_content(
+                model=settings.GEMINI_IMAGE_MODEL,
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=['TEXT', 'IMAGE']
+                )
             )
-        )
+        except Exception as e:
+            # Check for quota/resource exhausted errors or invalid model
+            error_str = str(e).lower()
+            if "resource" in error_str or "quota" in error_str or "found" in error_str or "429" in error_str:
+                fallback_model = "gemini-2.0-flash-exp"
+                logger.warning(f"Primary model {settings.GEMINI_IMAGE_MODEL} failed ({e}). Falling back to {fallback_model}")
+                
+                response = client.models.generate_content(
+                    model=fallback_model,
+                    contents=full_prompt,
+                    config=types.GenerateContentConfig(
+                        response_modalities=['TEXT', 'IMAGE']
+                    )
+                )
+            else:
+                raise e
         
         # Extract the image from response
         if response.candidates and response.candidates[0].content.parts:
@@ -83,7 +101,8 @@ async def generate_promotional_image(
         logger.error(f"Image generation error: {e}")
         return ImageGenerationResponse(
             success=False,
-            error=str(e)
+            # Return detailed error so user knows if fallback also failed
+            error=f"Generation failed: {str(e)}"
         )
 
 
