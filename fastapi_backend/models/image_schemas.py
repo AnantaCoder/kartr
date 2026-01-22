@@ -21,3 +21,5 @@ class ImageGenerationResponse(BaseModel):
     success: bool
     image_base64: Optional[str] = None
     error: Optional[str] = None
+    model_used: Optional[str] = None  # Track which model generated the image
+
