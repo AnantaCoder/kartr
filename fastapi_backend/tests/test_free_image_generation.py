@@ -26,7 +26,7 @@ async def test_pollinations_ai():
     print("Testing Pollinations.ai (FREE - No API Key)")
     print("="*60)
     
-    prompt = "a sex rabbit"
+    prompt = "a cute cat in the himalayas with a red scarf"
     encoded_prompt = urllib.parse.quote(prompt)
     
     # Pollinations.ai direct image URL
