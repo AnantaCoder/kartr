@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from typing import Optional
+import os
+from datetime import datetime
 from models.social_schemas import BlueskyConnectRequest, BlueskyPostRequest, BlueskyPostResponse
 from services.bluesky_service import bluesky_service
 from services.auth_service import AuthService
@@ -39,60 +42,99 @@ async def connect_bluesky_account(
 
 @router.post("/post", response_model=BlueskyPostResponse)
 async def create_post(
-    request: BlueskyPostRequest,
+    text: str = Form(...),
+    image_path: Optional[str] = Form(None),
+    alt_text: Optional[str] = Form(None),
+    video_path: Optional[str] = Form(None),
+    image_file: Optional[UploadFile] = File(None),
     current_user: dict = Depends(get_current_user)
 ):
     """
     Create a post on Bluesky.
     Uses linked account credentials.
+    
+    Can accept:
+    - Text only
+    - Text with image file (upload)
+    - Text with image path (existing file)
+    - Text with video path
     """
-    # 1. Get credentials from current user
-    # Note: verify_credentials in /connect ensures we have valid ones, hopefully.
-    # We need to fetch the full user record again to be sure we have the password (if it's not in current_user dependency)
-    # The current_user dependency usually returns the user dict *without* password_hash, but let's check if we return custom fields.
-    # AuthService.get_user_by_id returns the user dict. If we added the fields to the schema, they should be there.
-    # However, AuthService usually strips sensitive data. We might need a direct DB fetch or ensure 'bluesky_password' isn't stripped by default getters BUT stripped in the Pydantic response.
-    
-    # Let's re-fetch user to getting internal fields if needed, or rely on current_user if it includes it.
-    # To be safe and secure, we should fetch specifically for this operation or ensure it's loaded.
-    # Since we modified the user schema to *exclude* bluesky_password in response model, it might be hidden in API responses but present in the dict if not explicitly popped.
-    
-    # Let's check AuthService.get_user_by_id logic: it returns dict.
-    # If we saved it to DB, it should be in the dict unless we popped it.
-    
-    user_full = AuthService.get_user_by_id(current_user["id"])
-    if not user_full:
-        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        user_full = AuthService.get_user_by_id(current_user["id"])
+        if not user_full:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    handle = user_full.get("bluesky_handle")
-    password = user_full.get("bluesky_password")
-    
-    if not handle or not password:
-        raise HTTPException(
-            status_code=400, 
-            detail="Bluesky account not linked. Please connect your account first via /bluesky/connect"
-        )
+        handle = user_full.get("bluesky_handle")
+        password = user_full.get("bluesky_password")
+        
+        if not handle or not password:
+            raise HTTPException(
+                status_code=400, 
+                detail="Bluesky account not linked. Please connect your account first via /bluesky/connect"
+            )
 
-    # 2. Post
-    if request.video_path:
-        return bluesky_service.post_video(
-            identifier=handle,
-            password=password,
-            text=request.text, 
-            video_path=request.video_path,
-            alt_text=request.alt_text or "Video"
-        )
-    elif request.image_path:
-        return bluesky_service.post_image(
-            identifier=handle,
-            password=password,
-            text=request.text, 
-            image_path=request.image_path,
-            alt_text=request.alt_text or ""
-        )
-    else:
-        return bluesky_service.post_text(
-            identifier=handle,
-            password=password,
-            text=request.text
-        )
+        # Handle image upload if provided
+        final_image_path = image_path
+        if image_file:
+            uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+            os.makedirs(uploads_dir, exist_ok=True)
+            
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            filename = f"{timestamp}_{image_file.filename}"
+            final_image_path = os.path.join(uploads_dir, filename)
+            
+            content = await image_file.read()
+            with open(final_image_path, "wb") as f:
+                f.write(content)
+
+        # Post based on content type
+        if video_path:
+            result = bluesky_service.post_video(
+                identifier=handle,
+                password=password,
+                text=text, 
+                video_path=video_path,
+                alt_text=alt_text or "Video"
+            )
+            return BlueskyPostResponse(
+                success=result.get("success", False),
+                message=result.get("message"),
+                post_uri=result.get("post_uri"),
+                cid=result.get("cid")
+            )
+        elif final_image_path:
+            result = bluesky_service.post_image(
+                identifier=handle,
+                password=password,
+                text=text, 
+                image_path=final_image_path,
+                alt_text=alt_text or ""
+            )
+            # Clean up uploaded file
+            if image_file:
+                try:
+                    os.remove(final_image_path)
+                except:
+                    pass
+            return BlueskyPostResponse(
+                success=result.get("success", False),
+                message=result.get("message"),
+                post_uri=result.get("post_uri"),
+                cid=result.get("cid")
+            )
+        else:
+            result = bluesky_service.post_text(
+                identifier=handle,
+                password=password,
+                text=text
+            )
+            return BlueskyPostResponse(
+                success=result.get("success", False),
+                message=result.get("message"),
+                post_uri=result.get("post_uri"),
+                cid=result.get("cid")
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to post: {str(e)}")

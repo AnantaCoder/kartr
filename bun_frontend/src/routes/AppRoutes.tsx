@@ -8,7 +8,8 @@ import YoutubeAnalysis from '../pages/YoutubeAnalysis';
 import ForgotPassword from '../pages/ForgotPassword';
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
-
+import AutoPosting from '../pages/AutoPosting.tsx';
+import VirtualAi from '../pages/VirtualAi.tsx';
 const AppRoutes: React.FC = () => {
     return (
         <Routes>
@@ -18,6 +19,8 @@ const AppRoutes: React.FC = () => {
             <Route path="/signup-sponsor" element={<SignupSponsor />} />
             <Route path="/YoutubeAnalysis" element={<YoutubeAnalysis />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auto-posting" element={<AutoPosting />} />
+             <Route path="/VirtualAi" element={<VirtualAi />} />
         </Routes>
     );
 };

@@ -2,12 +2,49 @@ import os
 from atproto import Client, models
 from fastapi import HTTPException
 import mimetypes
+from PIL import Image
+import io
 
 class BlueskyService:
     """
     Stateless service for Bluesky interactions.
     Requires credentials for every operation to support multiple users.
     """
+    
+    MAX_IMAGE_SIZE = 976.56 * 1024  # Bluesky max: ~976.56KB
+    
+    def _compress_image(self, image_path: str, max_size: int = int(MAX_IMAGE_SIZE)) -> bytes:
+        """Compress image to fit Bluesky's size limit (~1MB)"""
+        try:
+            # Open image
+            img = Image.open(image_path)
+            
+            # Convert RGBA to RGB if needed
+            if img.mode == 'RGBA':
+                rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+                rgb_img.paste(img, mask=img.split()[3])
+                img = rgb_img
+            
+            # Try to compress to target size
+            quality = 85
+            while quality > 10:
+                buffer = io.BytesIO()
+                img.save(buffer, format='JPEG', quality=quality, optimize=True)
+                img_bytes = buffer.getvalue()
+                
+                if len(img_bytes) <= max_size:
+                    return img_bytes
+                
+                quality -= 5
+            
+            # If still too large, resize image
+            img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+            buffer = io.BytesIO()
+            img.save(buffer, format='JPEG', quality=70, optimize=True)
+            return buffer.getvalue()
+            
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Image compression failed: {str(e)}")
     
     def _get_client(self, identifier: str, password: str) -> Client:
         """Helper to get an authenticated client."""
@@ -48,8 +85,8 @@ class BlueskyService:
             
         client = self._get_client(identifier, password)
         try:
-            with open(image_path, 'rb') as f:
-                img_data = f.read()
+            # Compress image to Bluesky's size limit
+            img_data = self._compress_image(image_path)
             
             post = client.send_image(text=text, image=img_data, image_alt=alt_text)
             return {

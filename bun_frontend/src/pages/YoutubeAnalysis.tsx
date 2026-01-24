@@ -21,11 +21,19 @@ const YouTubeAnalysis: React.FC = () => {
 
   const handleSearch = () => {
     if (!videoUrl.trim()) return;
+    if(localStorage.getItem("token") === null) {
+      alert("Please login to use this feature.");
+      return;
+    }
     dispatch(fetchYoutubeResults(videoUrl.trim()));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      if(localStorage.getItem("token") === null) {
+        alert("Please login to use this feature.");
+        return;
+      }
       handleSearch();
     }
   };

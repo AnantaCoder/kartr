@@ -12,10 +12,16 @@ const navItems = [
   { label: "Home", href: "/" },
   { label: "YouTube Analysis", href: "/YoutubeAnalysis" },
   { label: "Demo", href: "#demo" },
-  { label: "Virtual AI", href: "#virtual-ai" },
+  { label: "Virtual AI", href: "/VirtualAi" },
+  { label: "Enable Auto Posting", href: "/auto-posting" },
+   
 ];
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  bgClass?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ bgClass }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,7 +55,7 @@ const Header: React.FC = () => {
   return (
     <>
       <motion.header
-        className="fixed top-0 left-0 w-full z-50 bg-white/5 backdrop-blur-md"
+        className={`fixed top-0 left-0 w-full z-50 backdrop-blur-md ${bgClass ? bgClass : "bg-white/5"}`}
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
