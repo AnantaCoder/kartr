@@ -1,0 +1,244 @@
+import React, { useState } from "react";
+import Header from "@/components/layout/Header";
+import { Loader } from "lucide-react";
+
+const API_BASE_URL = "http://localhost:8000";
+
+const AutoPosting: React.FC = () => {
+  const [caption, setCaption] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [useAIImage, setUseAIImage] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+      setUseAIImage(false);
+      setMessage(null);
+    }
+  };
+
+  const handleUseAIImage = () => {
+    setSelectedImage(null);
+    setUseAIImage(true);
+    // TODO: Integrate with virtual AI page to fetch image
+  };
+
+  const handlePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
+
+    try {
+      if (!caption.trim()) {
+        setMessage({ type: "error", text: "Please write a caption" });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!username.trim() || !password.trim()) {
+        setMessage({ type: "error", text: "Please enter Bluesky credentials" });
+        setIsLoading(false);
+        return;
+      }
+
+      // Get JWT token from localStorage
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setMessage({ type: "error", text: "Please login first" });
+        setIsLoading(false);
+        return;
+      }
+
+      // Step 1: Connect Bluesky account (verify credentials and save to profile)
+      const connectRes = await fetch(`${API_BASE_URL}/api/bluesky/connect`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          identifier: username,
+          password: password,
+        }),
+      });
+
+      if (!connectRes.ok) {
+        const error = await connectRes.json();
+        throw new Error(error.detail || "Failed to verify Bluesky credentials");
+      }
+
+      // Step 2: Post to Bluesky (using saved credentials from profile)
+      const postFormData = new FormData();
+      postFormData.append("text", caption);
+      postFormData.append("image_path", ""); // Empty string means no saved image path
+      postFormData.append("alt_text", caption);
+
+      if (selectedImage) {
+        postFormData.append("image_file", selectedImage);
+      }
+
+      const postRes = await fetch(`${API_BASE_URL}/api/bluesky/post`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          // Don't set Content-Type - browser will set it with boundary
+        },
+        body: postFormData,
+      });
+
+      if (!postRes.ok) {
+        const error = await postRes.json();
+        throw new Error(error.detail || "Failed to post to Bluesky");
+      }
+
+      const postData = await postRes.json();
+      setMessage({
+        type: "success",
+        text: `✅ Posted successfully! Post URI: ${postData.post_uri}`,
+      });
+
+      // Reset form
+      setCaption("");
+      setUsername("");
+      setPassword("");
+      setSelectedImage(null);
+      setUseAIImage(false);
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "An error occurred",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Header />
+      <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-purple-500/30">
+        <div className="pt-32 pb-20 px-6 relative overflow-hidden flex flex-col items-center">
+          {/* BACKGROUND GLOW */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
+
+          <div className="w-full max-w-2xl p-10 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl relative z-10">
+            <h2 className="text-4xl font-black text-center mb-10 bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+              Auto-Post Pipeline
+            </h2>
+            <form onSubmit={handlePost} className="space-y-8">
+              <div className="flex gap-4 justify-center mb-4">
+                <label className="flex flex-col items-center cursor-pointer group">
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                  <span className="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-2xl shadow-xl group-hover:bg-white/10 group-hover:scale-105 transition-all duration-300 text-xs font-black uppercase tracking-widest">
+                    Upload Asset
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleUseAIImage}
+                  className="px-6 py-3 bg-purple-600/20 border border-purple-500/30 text-purple-400 rounded-2xl shadow-xl hover:bg-purple-600/30 hover:scale-105 transition-all duration-300 text-xs font-black uppercase tracking-widest"
+                >
+                  Fetch AI Asset
+                </button>
+              </div>
+
+              <div className="mb-4 min-h-[28px] text-center">
+                {selectedImage && <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest animate-fade-in shadow-lg">Asset: {selectedImage.name}</span>}
+                {useAIImage && <span className="inline-block px-4 py-1.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-black uppercase tracking-widest animate-fade-in shadow-lg">Using Virtual AI Engine Asset</span>}
+              </div>
+
+              <div className="relative group">
+                <label className="block mb-3 text-xs font-black uppercase tracking-widest text-gray-500">Caption Content</label>
+                <input
+                  type="text"
+                  value={caption}
+                  onChange={e => setCaption(e.target.value)}
+                  placeholder="Write a viral caption..."
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-white placeholder:text-gray-600 font-medium"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="relative group">
+                  <label className="block mb-3 text-xs font-black uppercase tracking-widest text-gray-500">Bluesky Handle</label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="user.bsky.social"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-white placeholder:text-gray-600 font-medium"
+                    required
+                  />
+                </div>
+                <div className="relative group">
+                  <label className="block mb-3 text-xs font-black uppercase tracking-widest text-gray-500">App Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-white placeholder:text-gray-600 font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group relative w-full py-5 mt-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black uppercase tracking-widest text-sm rounded-2xl shadow-2xl hover:scale-[1.02] hover:shadow-purple-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <div className="relative z-10 flex items-center justify-center gap-3">
+                  {isLoading ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      Dispatching...
+                    </>
+                  ) : (
+                    "Launch Post"
+                  )}
+                </div>
+              </button>
+
+              {message && (
+                <div
+                  className={`p-5 rounded-2xl text-center text-xs font-black uppercase tracking-widest shadow-xl border animate-fade-in ${message.type === "success"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-emerald-500/5"
+                    : "bg-red-500/10 text-red-400 border-red-500/20 shadow-red-500/5"
+                    }`}
+                >
+                  {message.text}
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @keyframes fade-in-up {
+          0% { opacity: 0; transform: translateY(40px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fade-in-up 0.7s cubic-bezier(.4,0,.2,1) both; }
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x { background-size: 200% 200%; animation: gradient-x 3s ease-in-out infinite; }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-fade-in { animation: fade-in 0.5s both; }
+      `}</style>
+    </>
+  );
+};
+
+export default AutoPosting;

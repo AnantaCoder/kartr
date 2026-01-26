@@ -1,0 +1,48 @@
+# Kartr FastAPI Backend Requirements
+# ===================================
+
+# Core Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-dotenv>=1.0.0
+
+# Authentication
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.6
+atproto>=0.0.0
+groq>=0.4.0
+
+# Validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+email-validator>=2.0.0
+
+# HTTP Client
+httpx>=0.25.0
+
+# Google APIs
+google-api-python-client>=2.100.0
+google-generativeai>=0.3.0
+google-genai==1.59.0
+# Data Processing
+pandas>=2.0.0,<3.0.0
+aiofiles>=23.2.1
+
+# Firebase (Database & Authentication)
+firebase-admin>=6.2.0
+
+# bluesky
+
+# AI Clients
+openai==2.15.0
+
+# Machine Learning & Video Generation
+torch>=2.0.0
+diffusers>=0.24.0
+accelerate>=0.25.0
+opencv-python>=4.8.0
+numpy>=1.24.0,<2.0.0
+networkx>=3.0
+cloudinary>=1.36.0
+Pillow>=10.0.0
