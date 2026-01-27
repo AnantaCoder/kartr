@@ -11,7 +11,7 @@ class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=64)
     email: EmailStr
     password: str = Field(..., min_length=8)
-    user_type: str = Field(..., pattern="^(influencer|sponsor)$")
+    user_type: str = Field(..., pattern="^(influencer|sponsor|admin)$")
     full_name: Optional[str] = Field(default="", max_length=128)
 
 

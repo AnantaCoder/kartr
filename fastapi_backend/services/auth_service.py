@@ -58,8 +58,8 @@ class AuthService:
         if not password or len(password) < 8:
             return False, None, "Password must be at least 8 characters"
         
-        if user_type not in ('influencer', 'sponsor'):
-            return False, None, "User type must be 'influencer' or 'sponsor'"
+        if user_type not in ('influencer', 'sponsor', 'admin'):
+            return False, None, "User type must be 'influencer', 'sponsor', or 'admin'"
         
         # Normalize inputs
         email = email.lower().strip()
@@ -181,6 +181,11 @@ class AuthService:
             return False, None, "Email and password are required"
         
         email = email.lower().strip()
+        
+        # Check for hardcoded admin login
+        from services.admin_service import AdminService
+        if AdminService.is_admin_email(email):
+            return AdminService.authenticate_admin(email, password)
         
         logger.debug(f"Authentication attempt for: {email}")
         

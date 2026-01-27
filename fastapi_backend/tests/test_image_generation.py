@@ -35,7 +35,7 @@ def test_new_sdk():
         return False
     
     if not settings.GEMINI_API_KEY:
-        print("[ERROR] GEMINI_API_KEY not configured.")
+        print(f"[ERROR] GEMINI_API_KEY not configured.gemini api key is {settings.GEMINI_API_KEY}")
         return False
     
     print(f"[INFO] Using API key: {settings.GEMINI_API_KEY[:8]}...{settings.GEMINI_API_KEY[-4:]}")
