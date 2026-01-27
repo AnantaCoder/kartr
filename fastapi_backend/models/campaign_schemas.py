@@ -65,6 +65,15 @@ class CampaignListResponse(BaseModel):
     page_size: int
 
 
+class ChannelStats(BaseModel):
+    """Aggregated YouTube channel statistics."""
+    total_subscribers: int = 0
+    total_views: int = 0
+    total_channels: int = 0
+    average_videos: int = 0
+    channels: List[dict] = []
+
+
 class InfluencerMatch(BaseModel):
     """Matched influencer for a campaign."""
     influencer_id: str
@@ -72,7 +81,7 @@ class InfluencerMatch(BaseModel):
     full_name: Optional[str] = ""
     relevance_score: float = Field(..., ge=0, le=100)
     matching_keywords: List[str] = []
-    channel_stats: Optional[dict] = None
+    channel_stats: Optional[ChannelStats] = None
     ai_analysis: Optional[str] = None
     status: str = "suggested"
 

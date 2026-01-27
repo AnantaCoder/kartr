@@ -197,6 +197,43 @@ async def get_campaign_influencers(
     )
 
 
+@router.get("/discover/influencers")
+async def discover_influencers(
+    niche: str = Query(..., description="Campaign niche (e.g., 'home appliances', 'fashion')"),
+    keywords: str = Query("", description="Comma-separated keywords"),
+    description: str = Query("", description="Campaign description for AI matching"),
+    limit: int = Query(20, ge=1, le=50, description="Max results"),
+    current_user: dict = Depends(require_sponsor)
+):
+    """
+    Discover influencers based on niche and keywords.
+    
+    Uses AI-powered matching with YouTube analytics:
+    - Keyword matching against influencer profiles
+    - YouTube channel content analysis  
+    - Gemini AI semantic relevance scoring
+    
+    Sponsor only endpoint.
+    """
+    from services.influencer_discovery_service import influencer_discovery_service
+    
+    keyword_list = [k.strip() for k in keywords.split(",") if k.strip()]
+    
+    matched = influencer_discovery_service.discover_influencers(
+        niche=niche,
+        keywords=keyword_list,
+        campaign_description=description,
+        limit=limit
+    )
+    
+    return {
+        "influencers": [InfluencerMatch(**m) for m in matched],
+        "total_count": len(matched),
+        "niche": niche,
+        "keywords": keyword_list
+    }
+
+
 @router.post("/{campaign_id}/influencers", response_model=MessageResponse)
 async def add_influencer_to_campaign(
     campaign_id: str,

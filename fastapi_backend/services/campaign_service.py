@@ -188,68 +188,44 @@ class CampaignService:
         sponsor_id: str
     ) -> List[Dict[str, Any]]:
         """
-        Find influencers matching a campaign using keywords + AI analysis.
+        Find influencers matching a campaign using AI + YouTube analytics.
+        
+        Uses the InfluencerDiscoveryService for:
+        - Keyword matching against influencer profiles
+        - YouTube channel content analysis
+        - Gemini AI semantic relevance scoring
         
         Args:
             campaign_id: Campaign's ID
             sponsor_id: Sponsor's ID
             
         Returns:
-            List of matched influencers with scores
+            List of matched influencers with scores and analytics
         """
         campaign = CampaignService.get_campaign(campaign_id, sponsor_id)
         
         if not campaign:
             return []
         
-        keywords = campaign.get("keywords", [])
-        niche = campaign.get("niche", "").lower()
-        description = campaign.get("description", "").lower()
+        # Use the AI-powered discovery service
+        from services.influencer_discovery_service import influencer_discovery_service
         
-        # Extract additional keywords from description
-        extracted_keywords = CampaignService._extract_keywords(description)
-        all_keywords = set([k.lower() for k in keywords] + extracted_keywords)
-        
-        matched = []
-        
-        # Search for matching influencers
-        if is_firebase_configured():
-            # TODO: Query Firebase for influencers
-            pass
-        else:
-            mock_db = get_mock_db()
-            influencers = [
-                u for u in mock_db.users.values()
-                if u.get("user_type") == "influencer"
-            ]
-            
-            for influencer in influencers:
-                score = CampaignService._calculate_match_score(
-                    influencer,
-                    all_keywords,
-                    niche
-                )
-                
-                if score > 0:
-                    matched.append({
-                        "influencer_id": influencer.get("id"),
-                        "username": influencer.get("username"),
-                        "full_name": influencer.get("full_name", ""),
-                        "relevance_score": score,
-                        "matching_keywords": list(all_keywords)[:5],
-                        "channel_stats": None,
-                        "ai_analysis": None,
-                        "status": "suggested"
-                    })
-        
-        # Sort by score descending
-        matched.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
+        matched = influencer_discovery_service.discover_influencers(
+            niche=campaign.get("niche", ""),
+            keywords=campaign.get("keywords", []),
+            campaign_description=campaign.get("description", ""),
+            budget_min=campaign.get("budget_min"),
+            budget_max=campaign.get("budget_max"),
+            limit=20
+        )
         
         # Update campaign with matched count
         campaign["matched_influencers_count"] = len(matched)
         CampaignService._campaigns[campaign_id] = campaign
         
-        return matched[:20]  # Return top 20
+        logger.info(f"Found {len(matched)} matching influencers for campaign {campaign_id}")
+        
+        return matched
     
     @staticmethod
     def add_influencer_to_campaign(
