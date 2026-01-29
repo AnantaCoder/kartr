@@ -9,7 +9,8 @@ import SignupSponsor from '../pages/SignupSponsor';
 import YoutubeAnalysis from '../pages/YoutubeAnalysis';
 import ForgotPassword from '../pages/ForgotPassword';
 import AutoPosting from '../pages/AutoPosting';
-import VirtualAi from '../pages/VirtualAi';
+import VirtualAi from '../pages/VirtualAi';     
+import BulkAnalysis from '../pages/BulkAnalysis.tsx';
 
 // Admin pages
 import AdminDashboard from '../pages/admin/AdminDashboard';
@@ -36,6 +37,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/auto-posting" element={<AutoPosting />} />
             <Route path="/VirtualAi" element={<VirtualAi />} />
+             <Route path="/BulkAnalysis" element={<BulkAnalysis />} />
 
             {/* Admin Routes (protected by useAdminGuard in component) */}
             <Route path="/admin" element={<AdminDashboard />} />

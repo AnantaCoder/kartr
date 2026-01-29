@@ -11,7 +11,8 @@ import type { AppDispatch } from "../../store/store";
 const navItems = [
   { label: "Home", href: "/" },
   { label: "YouTube Analysis", href: "/YoutubeAnalysis" },
-  // { label: "Demo", href: "#demo" },
+  { label: "Bulk Analysis", href: "/BulkAnalysis" },
+  
   { label: "Virtual AI", href: "/VirtualAi" },
   { label: "Enable Auto Posting", href: "/auto-posting" },
 

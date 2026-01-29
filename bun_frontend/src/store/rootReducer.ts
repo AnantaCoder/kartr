@@ -1,6 +1,7 @@
 import { combineReducers } from "@reduxjs/toolkit";
 import { authReducer } from "../features/auth";
 import youtubeReducer from "./slices/youtubeSlice";
+import bulkAnalysisReducer from "./slices/bulkAnalysisSlice";
 import chatReducer from "./slices/chatSlice";
 import adminReducer from "./slices/adminSlice";
 import campaignReducer from "./slices/campaignSlice";
@@ -10,6 +11,7 @@ import trackingReducer from "./slices/trackingSlice";
 const rootReducer = combineReducers({
   auth: authReducer,
   youtube: youtubeReducer,
+  bulkAnalysis: bulkAnalysisReducer,
   chat: chatReducer,
   admin: adminReducer,
   campaigns: campaignReducer,
