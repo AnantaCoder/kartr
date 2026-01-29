@@ -48,3 +48,8 @@ export const logoutUser = async (): Promise<void> => {
     // Ignore errors on logout
   }
 };
+
+export const updateUserProfile = async (data: Partial<User>): Promise<User> => {
+  const response = await apiClient.put<User>("/auth/profile", data);
+  return response.data;
+};

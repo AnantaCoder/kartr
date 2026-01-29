@@ -112,6 +112,14 @@ export const completeCampaign = async (campaignId: string): Promise<Campaign> =>
   return response.data;
 };
 
+/**
+ * Get invitations for the current influencer
+ */
+export const getInfluencerInvitations = async (): Promise<{ invitations: any[]; count: number }> => {
+  const response = await apiClient.get(`${CAMPAIGNS_BASE}/invitations`);
+  return response.data;
+};
+
 export default {
   createCampaign,
   listCampaigns,
@@ -123,4 +131,5 @@ export default {
   activateCampaign,
   pauseCampaign,
   completeCampaign,
+  getInfluencerInvitations,
 };

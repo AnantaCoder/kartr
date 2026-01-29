@@ -2,6 +2,14 @@
  * Campaign module types
  */
 
+export interface InfluencerStageCounts {
+  invited: number;
+  accepted: number;
+  in_progress: number;
+  completed: number;
+  rejected: number;
+}
+
 export interface Campaign {
   id: string;
   sponsor_id: string;
@@ -17,6 +25,8 @@ export interface Campaign {
   created_at: string;
   updated_at: string;
   matched_influencers_count: number;
+  // Influencer stage breakdown
+  influencer_stages?: InfluencerStageCounts;
 }
 
 export interface CampaignCreateRequest {

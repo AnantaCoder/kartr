@@ -89,7 +89,7 @@ class AdminService:
             
             if users_repo:
                 try:
-                    all_users = users_repo.get_all()
+                    all_users = users_repo.find_all()
                     users = [u for u in all_users if u]
                 except Exception as e:
                     logger.error(f"Error fetching users from Firebase: {e}")
@@ -150,7 +150,7 @@ class AdminService:
         if is_firebase_configured():
             users_repo = get_users_repository()
             if users_repo:
-                user = users_repo.get_by_id(user_id)
+                user = users_repo.find_by_id(user_id)
         else:
             mock_db = get_mock_db()
             user = mock_db.get_user_by_id(user_id)
@@ -249,7 +249,7 @@ class AdminService:
             users_repo = get_users_repository()
             if users_repo:
                 try:
-                    users = users_repo.get_all() or []
+                    users = users_repo.find_all() or []
                 except Exception as e:
                     logger.error(f"Error fetching analytics from Firebase: {e}")
         else:

@@ -19,6 +19,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import SponsorDashboard from '../pages/sponsor/SponsorDashboard';
 import SponsorProfile from '../pages/sponsor/SponsorProfile';
 import InfluencerDiscovery from '../pages/sponsor/InfluencerDiscovery';
+import CampaignDetail from '../pages/sponsor/CampaignDetail';
 
 // Influencer pages
 import InfluencerDashboard from '../pages/influencer/InfluencerDashboard';
@@ -48,6 +49,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/sponsor/dashboard" element={<SponsorDashboard />} />
             <Route path="/sponsor/profile" element={<SponsorProfile />} />
             <Route path="/sponsor/campaigns" element={<SponsorDashboard />} />
+            <Route path="/sponsor/campaigns/:campaignId" element={<CampaignDetail />} />
             <Route path="/sponsor/discovery" element={<InfluencerDiscovery />} />
 
             {/* Influencer Routes (protected by useInfluencerGuard in component) */}

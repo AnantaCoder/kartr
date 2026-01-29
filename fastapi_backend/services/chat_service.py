@@ -591,3 +591,44 @@ class ChatService:
             return True, mock_db._chat_conversations[conversation_id], None
         
         return False, None, "Conversation not found"
+        return False, None, "Conversation not found"
+
+    @staticmethod
+    def analyze_niche(channel_data: Dict[str, Any], videos: List[Dict[str, Any]]) -> Optional[str]:
+        """
+        Analyze YouTube channel content to determine niche using Gemini.
+        
+        Args:
+            channel_data: Dictionary containing channel title, description, etc.
+            videos: List of dictionaries containing video titles and descriptions.
+            
+        Returns:
+            Determined niche (string) or None if analysis fails.
+        """
+        if not initialize_gemini():
+            return None
+            
+        try:
+            # Construct prompt context
+            context = f"""
+            Analyze the following YouTube channel and determine its primary niche (3-5 words max).
+            
+            Channel: {channel_data.get('title', 'Unknown')}
+            Description: {channel_data.get('description', '')}
+            
+            Recent Videos:
+            """
+            
+            for v in videos[:10]: # Analyze top 10 videos
+                context += f"- {v.get('title', '')}: {v.get('description', '')[:100]}...\n"
+                
+            prompt = context + "\n\nBased on this content, what is the specific niche of this influencer? Return ONLY the niche name, nothing else."
+            
+            model = genai.GenerativeModel(model_name=settings.GEMINI_CHAT_MODEL)
+            response = model.generate_content(prompt)
+            
+            return response.text.strip()
+            
+        except Exception as e:
+            logger.error(f"Error analyzing niche: {e}")
+            return None

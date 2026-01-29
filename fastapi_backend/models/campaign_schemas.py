@@ -36,6 +36,15 @@ class CampaignUpdate(BaseModel):
     status: Optional[str] = Field(None, pattern="^(draft|active|paused|completed)$")
 
 
+class InfluencerStageCounts(BaseModel):
+    """Influencer stage counts for a campaign."""
+    invited: int = 0
+    accepted: int = 0
+    in_progress: int = 0
+    completed: int = 0
+    rejected: int = 0
+
+
 class CampaignResponse(BaseModel):
     """Full campaign details response."""
     id: str
@@ -52,6 +61,7 @@ class CampaignResponse(BaseModel):
     created_at: Union[datetime, str]
     updated_at: Union[datetime, str]
     matched_influencers_count: int = 0
+    influencer_stages: Optional[InfluencerStageCounts] = None
     
     class Config:
         from_attributes = True
@@ -97,3 +107,17 @@ class AddInfluencerRequest(BaseModel):
     """Add an influencer to a campaign."""
     influencer_id: str
     notes: Optional[str] = None
+
+
+class InvitationResponse(BaseModel):
+    """Respond to a campaign invitation."""
+    accept: bool = Field(..., description="True to accept, False to reject")
+
+
+class CampaignStatusUpdate(BaseModel):
+    """Update campaign job status (influencer)."""
+    status: str = Field(
+        ..., 
+        pattern="^(in_progress|completed|cancelled)$",
+        description="New status: in_progress, completed, or cancelled"
+    )

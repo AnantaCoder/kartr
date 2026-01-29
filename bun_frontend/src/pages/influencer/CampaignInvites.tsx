@@ -8,16 +8,17 @@ import { motion } from 'framer-motion';
 import { Briefcase, Calendar, DollarSign, CheckCircle, XCircle, Clock, ArrowLeft, User } from 'lucide-react';
 import { useInfluencerGuard } from '../../hooks/useRoleGuard';
 import apiClient from '../../services/apiClient';
+import { getInfluencerInvitations } from '../../services/campaignService';
 
 interface CampaignInvite {
     id: string;
     campaign_id: string;
     campaign_name: string;
-    sponsor_name: string;
+    sponsor_name: string; // Note: Backend might need to provide this or we use ID
     description: string;
     budget: number;
     deadline: string;
-    status: 'pending' | 'accepted' | 'rejected';
+    status: 'invited' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
     created_at: string;
 }
 
@@ -25,16 +26,28 @@ const CampaignInvites = () => {
     const { isLoading: authLoading } = useInfluencerGuard();
     const [invites, setInvites] = useState<CampaignInvite[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [filter, setFilter] = useState<'all' | 'invited' | 'accepted' | 'rejected' | 'in_progress' | 'completed'>('all');
 
     useEffect(() => {
         const fetchInvites = async () => {
             try {
-                const response = await apiClient.get('/campaigns/invites');
-                setInvites(response.data.invites || []);
+                const response = await getInfluencerInvitations();
+                // Map backend response to frontend interface
+                const mappedInvites = response.invitations.map((inv: any) => ({
+                    id: inv.campaign.id, // Use campaign ID as invite ID for now if no specific invite ID
+                    campaign_id: inv.campaign.id,
+                    campaign_name: inv.campaign.name,
+                    sponsor_name: inv.sponsor_name || "Unknown Sponsor",
+                    description: inv.campaign.description,
+                    budget: inv.campaign.budget_max || inv.campaign.budget_min,
+                    deadline: inv.campaign.requirements?.deadline || '',
+                    status: inv.status,
+                    created_at: inv.invited_at
+                }));
+                setInvites(mappedInvites);
             } catch (error) {
                 console.error('Failed to fetch invites:', error);
-                // Use empty array for now
                 setInvites([]);
             } finally {
                 setLoading(false);
@@ -44,25 +57,35 @@ const CampaignInvites = () => {
         fetchInvites();
     }, []);
 
-    const handleAccept = async (inviteId: string) => {
+    const handleRespond = async (campaignId: string, accept: boolean) => {
+        setActionLoading(campaignId);
         try {
-            await apiClient.post(`/campaigns/invites/${inviteId}/accept`);
+            await apiClient.post(`/campaigns/invitations/${campaignId}/respond`, { accept });
             setInvites(invites.map(inv =>
-                inv.id === inviteId ? { ...inv, status: 'accepted' as const } : inv
+                inv.campaign_id === campaignId
+                    ? { ...inv, status: accept ? 'accepted' : 'rejected' }
+                    : inv
             ));
         } catch (error) {
-            console.error('Failed to accept invite:', error);
+            console.error(`Failed to ${accept ? 'accept' : 'reject'} invite:`, error);
+        } finally {
+            setActionLoading(null);
         }
     };
 
-    const handleReject = async (inviteId: string) => {
+    const handleUpdateStatus = async (campaignId: string, newStatus: string) => {
+        setActionLoading(campaignId);
         try {
-            await apiClient.post(`/campaigns/invites/${inviteId}/reject`);
+            await apiClient.patch(`/campaigns/invitations/${campaignId}/status`, { status: newStatus });
             setInvites(invites.map(inv =>
-                inv.id === inviteId ? { ...inv, status: 'rejected' as const } : inv
+                inv.campaign_id === campaignId
+                    ? { ...inv, status: newStatus as any }
+                    : inv
             ));
         } catch (error) {
-            console.error('Failed to reject invite:', error);
+            console.error(`Failed to update status:`, error);
+        } finally {
+            setActionLoading(null);
         }
     };
 
@@ -86,7 +109,28 @@ const CampaignInvites = () => {
                         Rejected
                     </span>
                 );
-            default:
+            case 'in_progress':
+                return (
+                    <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm">
+                        <Clock className="w-4 h-4" />
+                        In Progress
+                    </span>
+                );
+            case 'completed':
+                return (
+                    <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm">
+                        <CheckCircle className="w-4 h-4" />
+                        Completed
+                    </span>
+                );
+            case 'cancelled':
+                return (
+                    <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-gray-500/20 text-gray-400 text-sm">
+                        <XCircle className="w-4 h-4" />
+                        Cancelled
+                    </span>
+                );
+            default: // 'invited' or pending
                 return (
                     <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm">
                         <Clock className="w-4 h-4" />
@@ -131,7 +175,7 @@ const CampaignInvites = () => {
                     transition={{ delay: 0.1 }}
                     className="flex gap-2 mb-6 overflow-x-auto pb-2"
                 >
-                    {(['all', 'pending', 'accepted', 'rejected'] as const).map((tab) => (
+                    {(['all', 'invited', 'accepted', 'in_progress', 'completed', 'rejected'] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setFilter(tab)}
@@ -140,10 +184,10 @@ const CampaignInvites = () => {
                                 : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
                                 }`}
                         >
-                            {tab}
-                            {tab === 'pending' && invites.filter(i => i.status === 'pending').length > 0 && (
+                            {tab === 'invited' ? 'Pending' : tab.replace('_', ' ')}
+                            {tab === 'invited' && invites.filter(i => i.status === 'invited').length > 0 && (
                                 <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
-                                    {invites.filter(i => i.status === 'pending').length}
+                                    {invites.filter(i => i.status === 'invited').length}
                                 </span>
                             )}
                         </button>
@@ -194,19 +238,53 @@ const CampaignInvites = () => {
                                         </div>
                                     </div>
 
-                                    {invite.status === 'pending' && (
+                                    {/* Action buttons based on status */}
+                                    {invite.status === 'invited' && (
                                         <div className="flex gap-3 lg:flex-col">
                                             <button
-                                                onClick={() => handleAccept(invite.id)}
-                                                className="flex-1 lg:flex-none px-6 py-2.5 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors font-medium"
+                                                onClick={() => handleRespond(invite.campaign_id, true)}
+                                                disabled={actionLoading === invite.campaign_id}
+                                                className="flex-1 lg:flex-none px-6 py-2.5 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors font-medium disabled:opacity-50"
                                             >
-                                                Accept
+                                                {actionLoading === invite.campaign_id ? 'Loading...' : 'Accept'}
                                             </button>
                                             <button
-                                                onClick={() => handleReject(invite.id)}
-                                                className="flex-1 lg:flex-none px-6 py-2.5 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors font-medium"
+                                                onClick={() => handleRespond(invite.campaign_id, false)}
+                                                disabled={actionLoading === invite.campaign_id}
+                                                className="flex-1 lg:flex-none px-6 py-2.5 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors font-medium disabled:opacity-50"
                                             >
-                                                Reject
+                                                {actionLoading === invite.campaign_id ? 'Loading...' : 'Reject'}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {invite.status === 'accepted' && (
+                                        <div className="flex gap-3 lg:flex-col">
+                                            <button
+                                                onClick={() => handleUpdateStatus(invite.campaign_id, 'in_progress')}
+                                                disabled={actionLoading === invite.campaign_id}
+                                                className="flex-1 lg:flex-none px-6 py-2.5 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors font-medium disabled:opacity-50"
+                                            >
+                                                Start Work
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {invite.status === 'in_progress' && (
+                                        <div className="flex gap-3 lg:flex-col">
+                                            <button
+                                                onClick={() => handleUpdateStatus(invite.campaign_id, 'completed')}
+                                                disabled={actionLoading === invite.campaign_id}
+                                                className="flex-1 lg:flex-none px-6 py-2.5 rounded-xl bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors font-medium disabled:opacity-50"
+                                            >
+                                                Mark Complete
+                                            </button>
+                                            <button
+                                                onClick={() => handleUpdateStatus(invite.campaign_id, 'cancelled')}
+                                                disabled={actionLoading === invite.campaign_id}
+                                                className="flex-1 lg:flex-none px-6 py-2.5 rounded-xl bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 transition-colors font-medium disabled:opacity-50"
+                                            >
+                                                Cancel
                                             </button>
                                         </div>
                                     )}

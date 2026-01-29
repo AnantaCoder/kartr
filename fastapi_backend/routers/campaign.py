@@ -7,7 +7,7 @@ Provides endpoints for:
 - Campaign performance tracking
 """
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 
 from models.campaign_schemas import (
@@ -17,11 +17,13 @@ from models.campaign_schemas import (
     CampaignListResponse,
     CampaignInfluencersResponse,
     InfluencerMatch,
-    AddInfluencerRequest
+    AddInfluencerRequest,
+    InvitationResponse,
+    CampaignStatusUpdate
 )
 from models.schemas import MessageResponse
 from services.campaign_service import CampaignService
-from utils.rbac import require_sponsor, require_sponsor_or_admin
+from utils.rbac import require_sponsor, require_sponsor_or_admin, require_influencer
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +74,93 @@ async def list_campaigns(
         total_count=result["total_count"],
         page=result["page"],
         page_size=result["page_size"]
+    )
+
+
+# =============================================================================
+# Influencer Invitations
+# =============================================================================
+
+@router.get("/invitations", response_model=Dict[str, Any])
+async def get_influencer_invitations(
+    current_user: dict = Depends(require_influencer)
+):
+    """
+    Get all campaign invitations for the current influencer.
+    
+    Influencer only endpoint.
+    """
+    invitations = CampaignService.get_influencer_invitations(current_user["id"])
+    
+    return {
+        "invitations": invitations,
+        "count": len(invitations)
+    }
+
+
+@router.post("/invitations/{campaign_id}/respond", response_model=MessageResponse)
+async def respond_to_invitation(
+    campaign_id: str,
+    response: InvitationResponse,
+    current_user: dict = Depends(require_influencer)
+):
+    """
+    Respond to a campaign invitation.
+    
+    Influencer only endpoint. Allows the influencer to accept or reject
+    an invitation from a sponsor.
+    """
+    success, error = CampaignService.respond_to_invitation(
+        influencer_id=current_user["id"],
+        campaign_id=campaign_id,
+        accept=response.accept
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error or "Failed to respond to invitation"
+        )
+    
+    action = "accepted" if response.accept else "rejected"
+    return MessageResponse(
+        success=True,
+        message=f"Invitation {action} successfully"
+    )
+
+
+@router.patch("/invitations/{campaign_id}/status", response_model=MessageResponse)
+async def update_campaign_job_status(
+    campaign_id: str,
+    update: CampaignStatusUpdate,
+    current_user: dict = Depends(require_influencer)
+):
+    """
+    Update job status for a campaign.
+    
+    Influencer only endpoint. Allows the influencer to update their
+    job status after accepting an invitation.
+    
+    Valid status transitions:
+    - accepted -> in_progress
+    - in_progress -> completed
+    - in_progress -> cancelled
+    """
+    success, error = CampaignService.update_campaign_status(
+        influencer_id=current_user["id"],
+        campaign_id=campaign_id,
+        new_status=update.status
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error or "Failed to update status"
+        )
+    
+    return MessageResponse(
+        success=True,
+        message=f"Status updated to {update.status}"
     )
 
 

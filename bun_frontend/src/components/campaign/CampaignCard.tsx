@@ -3,7 +3,8 @@
  * Displays campaign summary with status and actions
  */
 import { motion } from 'framer-motion';
-import { Calendar, Users, DollarSign, Edit2, Trash2, Play, Pause, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Calendar, Users, DollarSign, Edit2, Trash2, Play, Pause, CheckCircle, ExternalLink } from 'lucide-react';
 import type { Campaign, CampaignStatus } from '../../types/campaign';
 
 interface CampaignCardProps {
@@ -43,7 +44,13 @@ const CampaignCard = ({
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-1 line-clamp-1">{campaign.name}</h3>
+                    <Link
+                        to={`/sponsor/campaigns/${campaign.id}`}
+                        className="text-lg font-semibold text-white mb-1 line-clamp-1 hover:text-blue-400 transition-colors flex items-center gap-2 group"
+                    >
+                        {campaign.name}
+                        <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Link>
                     <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${status.color}`}
                     >
@@ -95,17 +102,88 @@ const CampaignCard = ({
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                    <Users className="w-4 h-4 text-blue-400" />
-                    <span className="text-gray-300">{campaign.matched_influencers_count} matched</span>
+            <div className="mb-4">
+                <div className="flex items-center justify-between text-sm mb-2">
+                    <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-400" />
+                        <span className="text-gray-300">{campaign.matched_influencers_count} influencers</span>
+                    </div>
+                    {campaign.budget_min && campaign.budget_max && (
+                        <div className="flex items-center gap-1">
+                            <DollarSign className="w-3 h-3 text-green-400" />
+                            <span className="text-gray-300 text-xs">
+                                ${campaign.budget_min} - ${campaign.budget_max}
+                            </span>
+                        </div>
+                    )}
                 </div>
-                {campaign.budget_min && campaign.budget_max && (
-                    <div className="flex items-center gap-2 text-sm col-span-2">
-                        <DollarSign className="w-4 h-4 text-green-400" />
-                        <span className="text-gray-300">
-                            ${campaign.budget_min} - ${campaign.budget_max}
-                        </span>
+
+                {/* Influencer Stage Progress */}
+                {campaign.influencer_stages && campaign.matched_influencers_count > 0 && (
+                    <div className="mt-3">
+                        <div className="flex items-center gap-1 h-2 rounded-full overflow-hidden bg-white/5">
+                            {campaign.influencer_stages.completed > 0 && (
+                                <div
+                                    className="h-full bg-purple-500"
+                                    style={{ width: `${(campaign.influencer_stages.completed / campaign.matched_influencers_count) * 100}%` }}
+                                    title={`Completed: ${campaign.influencer_stages.completed}`}
+                                />
+                            )}
+                            {campaign.influencer_stages.in_progress > 0 && (
+                                <div
+                                    className="h-full bg-blue-500"
+                                    style={{ width: `${(campaign.influencer_stages.in_progress / campaign.matched_influencers_count) * 100}%` }}
+                                    title={`In Progress: ${campaign.influencer_stages.in_progress}`}
+                                />
+                            )}
+                            {campaign.influencer_stages.accepted > 0 && (
+                                <div
+                                    className="h-full bg-green-500"
+                                    style={{ width: `${(campaign.influencer_stages.accepted / campaign.matched_influencers_count) * 100}%` }}
+                                    title={`Accepted: ${campaign.influencer_stages.accepted}`}
+                                />
+                            )}
+                            {campaign.influencer_stages.invited > 0 && (
+                                <div
+                                    className="h-full bg-yellow-500"
+                                    style={{ width: `${(campaign.influencer_stages.invited / campaign.matched_influencers_count) * 100}%` }}
+                                    title={`Pending: ${campaign.influencer_stages.invited}`}
+                                />
+                            )}
+                            {campaign.influencer_stages.rejected > 0 && (
+                                <div
+                                    className="h-full bg-red-500/50"
+                                    style={{ width: `${(campaign.influencer_stages.rejected / campaign.matched_influencers_count) * 100}%` }}
+                                    title={`Rejected: ${campaign.influencer_stages.rejected}`}
+                                />
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs">
+                            {campaign.influencer_stages.completed > 0 && (
+                                <span className="flex items-center gap-1 text-purple-400">
+                                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                    {campaign.influencer_stages.completed} done
+                                </span>
+                            )}
+                            {campaign.influencer_stages.in_progress > 0 && (
+                                <span className="flex items-center gap-1 text-blue-400">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                    {campaign.influencer_stages.in_progress} working
+                                </span>
+                            )}
+                            {campaign.influencer_stages.accepted > 0 && (
+                                <span className="flex items-center gap-1 text-green-400">
+                                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                    {campaign.influencer_stages.accepted} accepted
+                                </span>
+                            )}
+                            {campaign.influencer_stages.invited > 0 && (
+                                <span className="flex items-center gap-1 text-yellow-400">
+                                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                    {campaign.influencer_stages.invited} pending
+                                </span>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

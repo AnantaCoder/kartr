@@ -16,6 +16,20 @@ const initialState: CampaignState = {
   currentPage: 1,
 };
 
+// Helper to safely extract error message
+const getErrorMessage = (error: any, defaultMessage: string) => {
+  if (error.response?.data?.detail) {
+    const detail = error.response.data.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      // Handle Pydantic validation errors
+      return detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+    }
+    return JSON.stringify(detail);
+  }
+  return defaultMessage;
+};
+
 // Async thunks
 export const fetchCampaigns = createAsyncThunk(
   'campaigns/fetchCampaigns',
@@ -23,7 +37,7 @@ export const fetchCampaigns = createAsyncThunk(
     try {
       return await campaignService.listCampaigns(page, pageSize);
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Failed to fetch campaigns');
+      return rejectWithValue(getErrorMessage(error, 'Failed to fetch campaigns'));
     }
   }
 );
@@ -34,7 +48,7 @@ export const createCampaign = createAsyncThunk(
     try {
       return await campaignService.createCampaign(data);
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Failed to create campaign');
+      return rejectWithValue(getErrorMessage(error, 'Failed to create campaign'));
     }
   }
 );
@@ -45,7 +59,7 @@ export const updateCampaign = createAsyncThunk(
     try {
       return await campaignService.updateCampaign(id, data);
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Failed to update campaign');
+      return rejectWithValue(getErrorMessage(error, 'Failed to update campaign'));
     }
   }
 );
@@ -57,7 +71,7 @@ export const deleteCampaign = createAsyncThunk(
       await campaignService.deleteCampaign(id);
       return id;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Failed to delete campaign');
+      return rejectWithValue(getErrorMessage(error, 'Failed to delete campaign'));
     }
   }
 );
@@ -68,7 +82,7 @@ export const activateCampaign = createAsyncThunk(
     try {
       return await campaignService.activateCampaign(id);
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Failed to activate campaign');
+      return rejectWithValue(getErrorMessage(error, 'Failed to activate campaign'));
     }
   }
 );
@@ -79,7 +93,7 @@ export const pauseCampaign = createAsyncThunk(
     try {
       return await campaignService.pauseCampaign(id);
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Failed to pause campaign');
+      return rejectWithValue(getErrorMessage(error, 'Failed to pause campaign'));
     }
   }
 );

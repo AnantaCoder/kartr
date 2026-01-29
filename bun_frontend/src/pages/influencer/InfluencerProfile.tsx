@@ -5,11 +5,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Calendar, Shield, Edit2, Save, X, Youtube, Users, Eye, Video, Send, Link2, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Mail, Calendar, Shield, Edit2, Save, X, Youtube, Users, Eye, Video, Send, Link2, CheckCircle, AlertCircle, Sparkles, Tag, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useInfluencerGuard } from '../../hooks/useRoleGuard';
-import { useAppSelector } from '../../store/hooks';
-import { selectUser } from '../../store/slices/authSlice';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { selectUser, fetchCurrentUser } from '../../store/slices/authSlice';
 import apiClient from '../../services/apiClient';
+import { updateUserProfile } from '../../features/auth/api';
 import Breadcrumbs from '../../components/common/Breadcrumbs';
 
 interface YouTubeChannel {
@@ -29,17 +30,34 @@ interface BlueskyInfo {
 const InfluencerProfile = () => {
     const { isLoading: authLoading } = useInfluencerGuard();
     const user = useAppSelector(selectUser);
+    const dispatch = useAppDispatch();
     const [isEditing, setIsEditing] = useState(false);
     const [youtubeChannels, setYoutubeChannels] = useState<YouTubeChannel[]>([]);
     const [blueskyInfo, setBlueskyInfo] = useState<BlueskyInfo | null>(null);
     const [loadingYoutube, setLoadingYoutube] = useState(true);
     const [loadingBluesky, setLoadingBluesky] = useState(true);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Form state for editing
     const [formData, setFormData] = useState({
-        full_name: user?.full_name || '',
-        email: user?.email || '',
+        full_name: '',
+        email: '',
+        keywords: [] as string[],
     });
+    const [newKeyword, setNewKeyword] = useState('');
+    const [niche, setNiche] = useState<string | null>(null);
+
+    // Initialize form data when user loads
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                full_name: user.full_name || '',
+                email: user.email || '',
+                keywords: user.keywords || [],
+            });
+            setNiche(user.niche || null);
+        }
+    }, [user]);
 
     // Fetch YouTube channels
     useEffect(() => {
@@ -86,11 +104,59 @@ const InfluencerProfile = () => {
     }, []);
 
     const handleSave = async () => {
-        // TODO: Implement profile update API call
-        setIsEditing(false);
+        try {
+            await updateUserProfile({
+                full_name: formData.full_name,
+                keywords: formData.keywords,
+                // Email update usually requires verification, so avoiding it for now or assume backend handles it safely
+                // email_visible: user?.email_visible 
+            });
+            setIsEditing(false);
+            dispatch(fetchCurrentUser()); // Refresh user data
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+            alert('Failed to update profile');
+        }
     };
 
-    // Format large numbers
+    const handleAddKeyword = () => {
+        if (newKeyword.trim() && !formData.keywords.includes(newKeyword.trim())) {
+            setFormData({
+                ...formData,
+                keywords: [...formData.keywords, newKeyword.trim()]
+            });
+            setNewKeyword('');
+        }
+    };
+
+    const handleRemoveKeyword = (keywordToRemove: string) => {
+        setFormData({
+            ...formData,
+            keywords: formData.keywords.filter(k => k !== keywordToRemove)
+        });
+    };
+
+    const handleAnalyzeNiche = async () => {
+        if (youtubeChannels.length === 0) {
+            alert("Please connect a YouTube channel first.");
+            return;
+        }
+
+        setIsAnalyzing(true);
+        try {
+            const response = await apiClient.post('/youtube/analyze-niche');
+            if (response.data.success) {
+                setNiche(response.data.message);
+                dispatch(fetchCurrentUser()); // Refresh to sync with backend
+            }
+        } catch (error: any) {
+            console.error("Niche analysis failed:", error);
+            alert(error.response?.data?.detail || "Failed to analyze niche");
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     // Format large numbers
     const formatNumber = (num?: number): string => {
         if (!num) return '0';
@@ -153,7 +219,17 @@ const InfluencerProfile = () => {
                         </button>
                         {isEditing && (
                             <button
-                                onClick={() => setIsEditing(false)}
+                                onClick={() => {
+                                    setIsEditing(false);
+                                    // Reset form data
+                                    if (user) {
+                                        setFormData({
+                                            full_name: user.full_name || '',
+                                            email: user.email || '',
+                                            keywords: user.keywords || [],
+                                        });
+                                    }
+                                }}
                                 className="absolute top-4 right-28 flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 backdrop-blur-sm text-red-400 hover:bg-red-500/30 transition-colors"
                             >
                                 <X className="w-4 h-4" />
@@ -166,7 +242,7 @@ const InfluencerProfile = () => {
                     <div className="pt-16 p-8">
                         <div className="mb-6">
                             <h2 className="text-2xl font-bold text-white">
-                                {user?.full_name || user?.username}
+                                {formData.full_name || user?.username}
                             </h2>
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-sm font-medium">
@@ -196,13 +272,33 @@ const InfluencerProfile = () => {
                                     <input
                                         type="email"
                                         value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                                        disabled // Disable email edit for now to simplify
+                                        title="Email change not supported yet"
+                                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-gray-400 cursor-not-allowed focus:outline-none"
                                     />
                                 ) : (
                                     <p className="text-white font-medium">{user?.email}</p>
                                 )}
                             </div>
+
+                            {/* Full Name */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <User className="w-5 h-5 text-gray-400" />
+                                    <span className="text-sm text-gray-400">Full Name</span>
+                                </div>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={formData.full_name}
+                                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                                    />
+                                ) : (
+                                    <p className="text-white font-medium">{user?.full_name || 'Not set'}</p>
+                                )}
+                            </div>
+
 
                             {/* Member Since */}
                             <div className="p-4 rounded-xl bg-white/5 border border-white/10">
@@ -220,19 +316,90 @@ const InfluencerProfile = () => {
                                         : 'N/A'}
                                 </p>
                             </div>
+                        </div>
 
-                            {/* Account Status */}
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <Shield className="w-5 h-5 text-gray-400" />
-                                    <span className="text-sm text-gray-400">Account Status</span>
+                        {/* Niche & Keywords Section */}
+                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Niche Analysis */}
+                            <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-3">
+                                        <Sparkles className="w-5 h-5 text-purple-400" />
+                                        <span className="text-sm text-purple-400 font-medium">AI Niche Analysis</span>
+                                    </div>
+                                    <button
+                                        onClick={handleAnalyzeNiche}
+                                        disabled={isAnalyzing}
+                                        className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors disabled:opacity-50"
+                                    >
+                                        {isAnalyzing ? (
+                                            <RefreshCw className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                            <Sparkles className="w-3 h-3" />
+                                        )}
+                                        {niche ? 'Regenerate' : 'Generate'}
+                                    </button>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-3 h-3 rounded-full bg-green-500" />
-                                    <p className="text-white font-medium">Active</p>
+                                <div className="mt-3">
+                                    {niche ? (
+                                        <div className="text-lg font-semibold text-white tracking-wide">
+                                            {niche}
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-400 text-sm italic">
+                                            Connect your YouTube channel and let AI identify your specific niche.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* Keywords */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <Tag className="w-5 h-5 text-gray-400" />
+                                    <span className="text-sm text-gray-400">Profile Keywords</span>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 mb-3 h-auto min-h-[40px]">
+                                    {(isEditing ? formData.keywords : user?.keywords)?.map((keyword, index) => (
+                                        <span key={index} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm border border-blue-500/30">
+                                            {keyword}
+                                            {isEditing && (
+                                                <button
+                                                    onClick={() => handleRemoveKeyword(keyword)}
+                                                    className="ml-1 hover:text-white"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </span>
+                                    ))}
+                                    {(!user?.keywords?.length && !isEditing) && (
+                                        <span className="text-gray-500 text-sm italic">No keywords added</span>
+                                    )}
+                                </div>
+
+                                {isEditing && (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newKeyword}
+                                            onChange={(e) => setNewKeyword(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleAddKeyword()}
+                                            placeholder="Add keyword..."
+                                            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+                                        />
+                                        <button
+                                            onClick={handleAddKeyword}
+                                            className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
+
                     </div>
                 </motion.div>
 

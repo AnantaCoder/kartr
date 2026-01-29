@@ -143,7 +143,7 @@ class InfluencerDiscoveryService:
             
             if users_repo:
                 try:
-                    all_users = users_repo.get_all() or []
+                    all_users = users_repo.find_all(limit=1000) or []
                     influencer_users = [
                         u for u in all_users 
                         if u.get("user_type") == "influencer"
@@ -336,7 +336,7 @@ Return ONLY a valid JSON array like this:
             channels_repo = get_youtube_channels_repository()
             
             if users_repo:
-                influencer = users_repo.get_by_id(influencer_id)
+                influencer = users_repo.find_by_id(influencer_id)
                 
                 if influencer and channels_repo:
                     channels = channels_repo.find_by_field("user_id", influencer_id) or []

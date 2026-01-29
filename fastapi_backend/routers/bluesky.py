@@ -128,7 +128,7 @@ async def create_post(
 
         # Post based on content type
         if final_video_path:
-            result = bluesky_service.post_video(
+            result = await bluesky_service.post_video(
                 identifier=handle,
                 password=password,
                 text=text, 

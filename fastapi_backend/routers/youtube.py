@@ -20,6 +20,8 @@ from models.schemas import (
     MessageResponse,
 )
 from services.youtube_service import youtube_service
+from services.auth_service import AuthService
+from services.chat_service import ChatService
 from utils.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -321,3 +323,54 @@ async def remove_user_channel(
         pass
         
     return {"success": True, "message": "Channel removed successfully"}
+
+
+@router.post("/analyze-niche", response_model=MessageResponse)
+async def analyze_niche(current_user: dict = Depends(get_current_user)):
+    """
+    Analyze user's connected YouTube channel to determine niche.
+    Updates the user's profile with the generated niche.
+    """
+    # 1. Get user's connected channels
+    channels = youtube_service.get_user_channels(current_user["id"])
+    if not channels:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No connected YouTube channels found. Please connect a channel first."
+        )
+    
+    # Use the first channel (primary)
+    primary_channel = channels[0]
+    channel_id = primary_channel.get('channel_id')
+    
+    try:
+        # 2. Fetch fresh data
+        channel_data = youtube_service.get_channel_stats(channel_id)
+        if hasattr(channel_data, 'dict'):
+             channel_data = channel_data.dict()
+
+        videos = youtube_service.get_channel_videos(channel_id, max_results=5)
+        
+        # 3. Analyze niche
+        niche = ChatService.analyze_niche(channel_data, videos)
+        
+        if not niche:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to generate niche analysis"
+            )
+            
+        # 4. Save to user profile
+        AuthService.update_user(current_user["id"], {"niche": niche})
+        
+        return MessageResponse(
+            success=True,
+            message=niche 
+        )
+        
+    except Exception as e:
+        logger.error(f"Niche analysis failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
