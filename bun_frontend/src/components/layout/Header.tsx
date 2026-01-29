@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, Menu, X, ChevronDown } from "lucide-react";
+import { LogOut, Menu, X, ChevronDown, User, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import KartrLine from "../common/KartrLine";
@@ -11,10 +11,10 @@ import type { AppDispatch } from "../../store/store";
 const navItems = [
   { label: "Home", href: "/" },
   { label: "YouTube Analysis", href: "/YoutubeAnalysis" },
-  { label: "Demo", href: "#demo" },
+  // { label: "Demo", href: "#demo" },
   { label: "Virtual AI", href: "/VirtualAi" },
   { label: "Enable Auto Posting", href: "/auto-posting" },
-   
+
 ];
 
 interface HeaderProps {
@@ -23,6 +23,8 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ bgClass }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
@@ -30,15 +32,44 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
+  // Get profile route based on user type
+  const getProfileRoute = () => {
+    if (user?.user_type === 'sponsor') return '/sponsor/profile';
+    if (user?.user_type === 'influencer') return '/influencer/profile';
+    if (user?.user_type === 'admin') return '/admin';
+    return '/';
+  };
+
+  // Get dashboard route based on user type
+  const getDashboardRoute = () => {
+    if (user?.user_type === 'sponsor') return '/sponsor';
+    if (user?.user_type === 'influencer') return '/influencer';
+    if (user?.user_type === 'admin') return '/admin';
+    return '/';
+  };
+
   const handleLogout = () => {
     dispatch(logout());
     navigate("/login");
     setMenuOpen(false);
+    setUserDropdownOpen(false);
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Close menu on route change
   useEffect(() => {
     setMenuOpen(false);
+    setUserDropdownOpen(false);
   }, [location]);
 
   // Close menu on resize to desktop
@@ -104,18 +135,71 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
               {/* Login/Signup buttons - hidden on mobile, show on md+ */}
               <div className="hidden md:flex items-center gap-2">
                 {isAuthenticated && user ? (
-                  <div className="flex items-center gap-4">
-                    <span className="text-gray-300 text-sm font-medium">
-                      Hello, {user.username}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      className="text-gray-300 hover:text-white hover:bg-white/10"
-                      onClick={handleLogout}
+                  <div className="relative" ref={dropdownRef}>
+                    {/* Username Button */}
+                    <button
+                      onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </Button>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+                        {user.full_name?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                      <span className="text-gray-200 text-sm font-medium max-w-[100px] truncate">
+                        {user.username}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {userDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 mt-2 w-56 rounded-xl bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-xl overflow-hidden"
+                        >
+                          {/* User Info Header */}
+                          <div className="px-4 py-3 border-b border-white/10">
+                            <p className="text-sm font-medium text-white truncate">{user.full_name || user.username}</p>
+                            <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs capitalize">
+                              {user.user_type}
+                            </span>
+                          </div>
+
+                          {/* Menu Items */}
+                          <div className="p-2">
+                            <Link
+                              to={getDashboardRoute()}
+                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                            >
+                              <LayoutDashboard className="w-4 h-4" />
+                              <span className="text-sm">Dashboard</span>
+                            </Link>
+                            <Link
+                              to={getProfileRoute()}
+                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                            >
+                              <User className="w-4 h-4" />
+                              <span className="text-sm">My Profile</span>
+                            </Link>
+                          </div>
+
+                          {/* Logout */}
+                          <div className="p-2 border-t border-white/10">
+                            <button
+                              onClick={handleLogout}
+                              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              <span className="text-sm">Logout</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 ) : (
                   <>

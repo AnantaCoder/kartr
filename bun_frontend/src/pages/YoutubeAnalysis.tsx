@@ -1,28 +1,36 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import BackgroundVideo from "../components/common/BackgroundVideo";
 import { motion } from "framer-motion";
-import { Search, AlertCircle, Loader2, Youtube } from "lucide-react";
+import { Search, AlertCircle, Loader2, Youtube, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchYoutubeResults, clearResults } from "../store/slices/youtubeSlice";
 import type { RootState, AppDispatch } from "../store/store";
 import YoutubeResults from "../components/youtube/YoutubeResults";
+import { useAppSelector } from "../store/hooks";
+import { selectIsAuthenticated, selectAuthInitialized } from "../store/slices/authSlice";
 
 const YouTubeAnalysis: React.FC = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { results, loading, error } = useSelector(
     (state: RootState) => state.youtube
   );
 
+  // Auth check
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isInitialized = useAppSelector(selectAuthInitialized);
+
   const [videoUrl, setVideoUrl] = useState("");
 
   const handleSearch = () => {
     if (!videoUrl.trim()) return;
-    if(localStorage.getItem("token") === null) {
-      alert("Please login to use this feature.");
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: '/YoutubeAnalysis' } });
       return;
     }
     dispatch(fetchYoutubeResults(videoUrl.trim()));
@@ -30,10 +38,6 @@ const YouTubeAnalysis: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      if(localStorage.getItem("token") === null) {
-        alert("Please login to use this feature.");
-        return;
-      }
       handleSearch();
     }
   };
@@ -42,6 +46,15 @@ const YouTubeAnalysis: React.FC = () => {
     setVideoUrl("");
     dispatch(clearResults());
   };
+
+  // Show loading while checking auth
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500" />
+      </div>
+    );
+  }
 
   return (
     <>

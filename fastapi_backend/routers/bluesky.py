@@ -4,11 +4,12 @@ import os
 from datetime import datetime
 from models.social_schemas import BlueskyConnectRequest, BlueskyPostRequest, BlueskyPostResponse
 from services.bluesky_service import bluesky_service
+from services.video_service import VIDEOS_DIR
 from services.auth_service import AuthService
 from utils.dependencies import get_current_user
 
 router = APIRouter(
-    prefix="/bluesky",
+    prefix="/api/bluesky",
     tags=["Bluesky"]
 )
 
@@ -21,23 +22,52 @@ async def connect_bluesky_account(
     Link a Bluesky account to the current user.
     Verifies credentials before saving.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Get user ID (might be under 'id' or 'uid')
+    user_id = current_user.get("id") or current_user.get("uid")
+    logger.info(f"Connecting Bluesky for user: {user_id}")
+    
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID not found in session")
+    
     # 1. Verify credentials with Bluesky
     is_valid = bluesky_service.verify_credentials(request.identifier, request.password)
     if not is_valid:
-        raise HTTPException(status_code=400, detail="Invalid Bluesky credentials")
+        raise HTTPException(status_code=400, detail="Invalid Bluesky credentials. Please check your handle and app password.")
     
     # 2. Save to User Profile (Database)
     update_data = {
         "bluesky_handle": request.identifier,
-        "bluesky_password": request.password # In production, encrypt this!
+        "bluesky_password": request.password  # In production, encrypt this!
     }
     
-    updated_user = AuthService.update_user(current_user["id"], update_data)
+    updated_user = AuthService.update_user(user_id, update_data)
     
     if not updated_user:
+        logger.error(f"Failed to update user {user_id} with Bluesky credentials")
         raise HTTPException(status_code=500, detail="Failed to save Bluesky credentials to profile")
         
+    logger.info(f"Bluesky account {request.identifier} linked to user {user_id}")
     return {"success": True, "message": f"Bluesky account {request.identifier} linked successfully"}
+
+
+@router.get("/status", response_model=dict)
+async def get_bluesky_status(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get current user's Bluesky connection status.
+    Returns handle if connected, or null if not.
+    """
+    # current_user already contains full user data from get_current_user
+    handle = current_user.get("bluesky_handle")
+    
+    return {
+        "connected": bool(handle),
+        "handle": handle if handle else None,
+    }
 
 
 @router.post("/post", response_model=BlueskyPostResponse)
@@ -87,13 +117,22 @@ async def create_post(
             with open(final_image_path, "wb") as f:
                 f.write(content)
 
+        # Handle video path - either direct path or filename in VIDEOS_DIR
+        final_video_path = video_path
+
+        # If video_path is just a filename (from frontend), resolve it to VIDEOS_DIR
+        if final_video_path and not os.path.isabs(final_video_path) and not os.path.exists(final_video_path):
+            potential_path = os.path.join(VIDEOS_DIR, final_video_path)
+            if os.path.exists(potential_path):
+                final_video_path = potential_path
+
         # Post based on content type
-        if video_path:
+        if final_video_path:
             result = bluesky_service.post_video(
                 identifier=handle,
                 password=password,
                 text=text, 
-                video_path=video_path,
+                video_path=final_video_path,
                 alt_text=alt_text or "Video"
             )
             return BlueskyPostResponse(

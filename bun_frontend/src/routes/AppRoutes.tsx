@@ -16,10 +16,13 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 
 // Sponsor pages
 import SponsorDashboard from '../pages/sponsor/SponsorDashboard';
+import SponsorProfile from '../pages/sponsor/SponsorProfile';
 import InfluencerDiscovery from '../pages/sponsor/InfluencerDiscovery';
 
 // Influencer pages
 import InfluencerDashboard from '../pages/influencer/InfluencerDashboard';
+import InfluencerProfile from '../pages/influencer/InfluencerProfile';
+import CampaignInvites from '../pages/influencer/CampaignInvites';
 
 const AppRoutes: React.FC = () => {
     return (
@@ -41,12 +44,15 @@ const AppRoutes: React.FC = () => {
             {/* Sponsor Routes (protected by useSponsorGuard in component) */}
             <Route path="/sponsor" element={<SponsorDashboard />} />
             <Route path="/sponsor/dashboard" element={<SponsorDashboard />} />
+            <Route path="/sponsor/profile" element={<SponsorProfile />} />
             <Route path="/sponsor/campaigns" element={<SponsorDashboard />} />
             <Route path="/sponsor/discovery" element={<InfluencerDiscovery />} />
 
             {/* Influencer Routes (protected by useInfluencerGuard in component) */}
             <Route path="/influencer" element={<InfluencerDashboard />} />
             <Route path="/influencer/dashboard" element={<InfluencerDashboard />} />
+            <Route path="/influencer/profile" element={<InfluencerProfile />} />
+            <Route path="/influencer/invites" element={<CampaignInvites />} />
         </Routes>
     );
 };

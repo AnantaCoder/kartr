@@ -37,6 +37,7 @@ from routers.bluesky import router as bluesky_router
 from routers.admin import router as admin_router
 from routers.campaign import router as campaign_router
 from routers.tracking import router as tracking_router
+from routers.video import router as video_router
 
 # Configure logging
 logging.basicConfig(
@@ -93,6 +94,7 @@ app.include_router(bluesky_router)
 app.include_router(admin_router)
 app.include_router(campaign_router)
 app.include_router(tracking_router)
+app.include_router(video_router)
 
 
 @app.get("/")
