@@ -1,4 +1,5 @@
 """
+# Force reload trigger - fix email argument name
 Kartr FastAPI Backend - Main Application Entry Point
 
 This is the main FastAPI application that serves as the backend for the Kartr
@@ -22,6 +23,10 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 # Load environment variables
+
+# Environment variables loaded successfully
+import sys
+print(f"DEBUG: sys.path = {sys.path}")
 load_dotenv()
 
 # Import routers
@@ -117,17 +122,38 @@ async def root():
     }
 
 
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler"""
+    
+    # If it's a known HTTP exception, let it pass through (or handle gracefully)
+    if isinstance(exc, StarletteHTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+        
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
+    print(f"CRITICAL ERROR: {exc}") # Force output to console
+    response = JSONResponse(
         status_code=500,
         content={
             "error": "Internal server error",
             "detail": str(exc) if os.getenv("DEBUG", "false").lower() == "true" else "An error occurred"
         }
     )
+    
+    # Manually add CORS headers since global exception handler might bypass middleware in some cases
+    origin = request.headers.get("origin")
+    if origin and (origin in ALLOWED_ORIGINS or "*" in ALLOWED_ORIGINS):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        
+    return response
 
 
 @app.on_event("startup")

@@ -44,7 +44,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/BulkAnalysis" element={<BulkAnalysis />} />
             <Route path="/innovation-lab" element={<MvpShowcase />} />
             <Route path="/ad-studio" element={<AdStudio />} />
-            <Route path="/sponsor/campaigns/:id" element={<SponsorCampaign />} />
+            <Route path="/sponsor/campaigns/:campaignId" element={<CampaignDetail />} />
 
             {/* Admin Routes (protected by useAdminGuard in component) */}
             <Route path="/admin" element={<AdminDashboard />} />

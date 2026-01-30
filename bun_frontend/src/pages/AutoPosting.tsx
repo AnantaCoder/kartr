@@ -21,6 +21,7 @@ const AutoPosting: React.FC = () => {
   const [useAIImage, setUseAIImage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [useSavedCreds, setUseSavedCreds] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -55,8 +56,8 @@ const AutoPosting: React.FC = () => {
         return;
       }
 
-      if (!username.trim() || !password.trim()) {
-        setMessage({ type: "error", text: "Please enter Bluesky credentials" });
+      if (!useSavedCreds && (!username.trim() || !password.trim())) {
+        setMessage({ type: "error", text: "Please enter Bluesky credentials or use saved ones" });
         setIsLoading(false);
         return;
       }
@@ -69,21 +70,23 @@ const AutoPosting: React.FC = () => {
       }
 
       // Step 1: Connect Bluesky account (verify credentials and save to profile)
-      const connectRes = await fetch(`${API_BASE_URL}/api/bluesky/connect`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          identifier: username,
-          password: password,
-        }),
-      });
+      if (!useSavedCreds) {
+        const connectRes = await fetch(`${API_BASE_URL}/api/bluesky/connect`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            identifier: username,
+            password: password,
+          }),
+        });
 
-      if (!connectRes.ok) {
-        const error = await connectRes.json();
-        throw new Error(error.detail || "Failed to verify Bluesky credentials");
+        if (!connectRes.ok) {
+          const error = await connectRes.json();
+          throw new Error(error.detail || "Failed to verify Bluesky credentials");
+        }
       }
 
       // Step 2: Post to Bluesky (using saved credentials from profile)
@@ -142,7 +145,7 @@ const AutoPosting: React.FC = () => {
 
           <div className="w-full max-w-2xl p-10 rounded-[32px] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl relative z-10">
             <h2 className="text-4xl font-black text-center mb-10 bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
-              Auto-Post Pipeline
+              Social Content Sync
             </h2>
             <form onSubmit={handlePost} className="space-y-8">
               <div className="flex gap-4 justify-center mb-4">
@@ -166,6 +169,20 @@ const AutoPosting: React.FC = () => {
                 {useAIImage && <span className="inline-block px-4 py-1.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-black uppercase tracking-widest animate-fade-in shadow-lg">Using Virtual AI Engine Asset</span>}
               </div>
 
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 p-4 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="useSavedCreds"
+                  checked={useSavedCreds}
+                  onChange={(e) => setUseSavedCreds(e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-gray-700"
+                />
+                <label htmlFor="useSavedCreds" className="text-sm font-medium cursor-pointer flex flex-col">
+                  <span>Use Saved Credentials</span>
+                  <span className="text-[10px] text-gray-400">Skip login if you've already connected your account</span>
+                </label>
+              </div>
+
               <div className="relative group">
                 <label className="block mb-3 text-xs font-black uppercase tracking-widest text-gray-500">Caption Content</label>
                 <input
@@ -178,30 +195,32 @@ const AutoPosting: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="relative group">
-                  <label className="block mb-3 text-xs font-black uppercase tracking-widest text-gray-500">Bluesky Handle</label>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    placeholder="user.bsky.social"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-white placeholder:text-gray-600 font-medium"
-                    required
-                  />
+              {!useSavedCreds && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="relative group">
+                    <label className="block mb-3 text-xs font-black uppercase tracking-widest text-gray-500">Bluesky Handle</label>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
+                      placeholder="user.bsky.social"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-white placeholder:text-gray-600 font-medium"
+                      required
+                    />
+                  </div>
+                  <div className="relative group">
+                    <label className="block mb-3 text-xs font-black uppercase tracking-widest text-gray-500">App Password</label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-white placeholder:text-gray-600 font-medium"
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="relative group">
-                  <label className="block mb-3 text-xs font-black uppercase tracking-widest text-gray-500">App Password</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all text-white placeholder:text-gray-600 font-medium"
-                    required
-                  />
-                </div>
-              </div>
+              )}
               <button
                 type="submit"
                 disabled={isLoading}

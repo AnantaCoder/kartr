@@ -38,9 +38,9 @@ class Settings(BaseSettings):
     
     # Gemini API
     GEMINI_API_KEY: str = ""
-    GEMINI_TEXT_MODEL: str = "gemini-2.5-flash"  # For text generation, analysis, Q&A
-    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash-lite"  # For chat conversations
-    GEMINI_IMAGE_MODEL: str = "gemini-2.0-flash-exp-image-generation"  # For image generation
+    GEMINI_TEXT_MODEL: str = "gemini-2.0-flash"  # For text generation, analysis, Q&A
+    GEMINI_CHAT_MODEL: str = "gemini-2.0-flash"  # For chat conversations
+    GEMINI_IMAGE_MODEL: str = "gemini-2.0-flash"  # For image generation
     
     # Grok API (xAI) - Fallback
     GROK_API_KEY: str = ""
@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")
     CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY", "")
     CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET", "")
+    
+    # Resend Settings
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
     
     class Config:
         env_file = ".env"

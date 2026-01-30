@@ -17,7 +17,9 @@ import {
     Play,
     Pause,
     UserPlus,
-    Loader2
+    Loader2,
+    FileText,
+    Download
 } from 'lucide-react';
 import { useSponsorGuard } from '../../hooks/useRoleGuard';
 import apiClient from '../../services/apiClient';
@@ -73,7 +75,7 @@ const CampaignDetail = () => {
                 }));
 
                 setCampaign({
-                    ...campaignRes.data.campaign,
+                    ...campaignRes.data,
                     influencers: mappedInfluencers
                 });
             } catch (err: any) {
@@ -355,6 +357,11 @@ const CampaignDetail = () => {
                                                 </span>
                                             )}
                                             {getStatusBadge(influencer.status)}
+                                            {influencer.status === 'completed' && (
+                                                <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="View Report">
+                                                    <FileText className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
                                     </motion.div>
                                 ))}

@@ -4,7 +4,21 @@ from typing import List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException
 from utils.dependencies import get_current_user
 from services.youtube_service import youtube_service
-from services.analysis_service import analyze_influencer_sponsors
+from services.analysis_service import analyze_influencer_sponsors, generate_sponsorship_pitch, get_ai_recommendations, create_analysis_document
+from services.resend_service import resend_service
+from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
+from io import BytesIO
+
+class PitchRequest(BaseModel):
+    video_id: str
+    brand_name: str
+    brand_details: str
+
+class SendEmailRequest(BaseModel):
+    to_email: str
+    subject: str
+    body: str
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +52,10 @@ async def get_advanced_analytics(video_id: str, current_user: dict = Depends(get
         sentiment_score = 85 if analysis.get("sentiment") == "Positive" else 50
         niche = analysis.get("influencer_niche", "Tech")
         
-        # Predefined Sponsor Logic (matching recommendations_map)
-        top_sponsors = {
-            "Tech": "NordVPN",
-            "Gaming": "Razer",
-            "Lifestyle": "HelloFresh",
-            "Business": "Shopify"
-        }
-        suggested_partner = top_sponsors.get(niche, "NordVPN")
-        
+        # Use AI-derived recommendations for suggested partner
+        recommendations = analysis_result.get("recommendations", [])
+        suggested_partner = recommendations[0].get("name") if recommendations else "Analysis Pending"
+
         analytics = {
             "engagement_rate": round(engagement_rate, 2),
             "sentiment_score": sentiment_score,
@@ -54,7 +63,8 @@ async def get_advanced_analytics(video_id: str, current_user: dict = Depends(get
             "audience_retention_estimate": 72.5,
             "brand_safety_score": 98.0,
             "growth_potential": "High" if engagement_rate > 5 else "Moderate",
-            "suggested_partner": suggested_partner # New: Include name directly
+            "suggested_partner": suggested_partner,
+            "potential_partners": recommendations # Pass full list for deep dive
         }
         
         return {
@@ -71,38 +81,63 @@ async def get_potential_sponsors(niche: str, current_user: dict = Depends(get_cu
     """
     Recommend potential sponsors based on the influencer's niche.
     """
-    # Logic: Match niche with industry
-    # This uses a predefined mapping or common sponsor profiles for demo purposes
-    recommendations_map = {
-        "Tech": [
-            {"name": "NordVPN", "industry": "Cybersecurity", "fit_score": 95, "reason": "High affinity with tech audience"},
-            {"name": "Skillshare", "industry": "Education", "fit_score": 88, "reason": "Matches creative tech skills"},
-            {"name": "Honey", "industry": "Ecommerce", "fit_score": 82, "reason": "Popular with savvy shoppers"}
-        ],
-        "Gaming": [
-            {"name": "Razer", "industry": "Hardware", "fit_score": 92, "reason": "Direct overlap with gamers"},
-            {"name": "GFuel", "industry": "Beverage", "fit_score": 90, "reason": "Strong gaming brand presence"},
-            {"name": "Epic Games", "industry": "Entertainment", "fit_score": 85, "reason": "Core gaming platform"}
-        ],
-        "Lifestyle": [
-            {"name": "HelloFresh", "industry": "Food & Beverage", "fit_score": 94, "reason": "Perfect for household demographics"},
-            {"name": "Casper", "industry": "Home Decor", "fit_score": 87, "reason": "Home-focused lifestyle fit"},
-            {"name": "Warby Parker", "industry": "Fashion", "fit_score": 80, "reason": "Trendy lifestyle accessory"}
-        ],
-        "Business": [
-            {"name": "Shopify", "industry": "Ecommerce", "fit_score": 96, "reason": "Entrepreneurial audience match"},
-            {"name": "HubSpot", "industry": "Software", "fit_score": 91, "reason": "B2B marketing focus"},
-            {"name": "American Express", "industry": "Finance", "fit_score": 85, "reason": "High-net-worth business reach"}
-        ]
-    }
-    
-    # Simple lookup with default
-    recommended = recommendations_map.get(niche, recommendations_map["Tech"])
-    
-    return {
-        "niche": niche,
-        "potential_sponsors": recommended
-    }
+    try:
+        from services.campaign_service import CampaignService
+        
+        # 1. Fetch from Platform Database (Campaigns)
+        # Note: In a real app we'd have a specialized "find_open_campaigns" method.
+        # Here we list campaigns from a "demo" sponsor or all/mock.
+        # For MVP we iterate typical mock/demo IDs or fetch all if possible.
+        # Since CampaignService is user-centric, we might default to mock db filtering 
+        # inside the service if we can't search all.
+        
+        # Simplification: We will rely on getting campaigns for *a* sponsor just to show data structure,
+        # OR ideally we'd have a `CampaignService.find_campaigns_by_niche(niche)`
+        # Let's try to mock that behavior locally:
+        platform_campaigns = []
+        # Attempt to access repository directly if easier, or iterate known IDs.
+        # For safety/speed in MVP without altering Service interface too much:
+        # We will skip complex DB queries and rely on Tavily for 'Discovery' 
+        # UNLESS the user explicitly has campaigns in their DB.
+        
+        # 2. Fetch from Live Market (Tavily)
+        live_recommendations = get_ai_recommendations(niche, perspective="creator")
+        
+        mapped_recs = []
+        
+        # Process Live Data First (Primary Discovery Source)
+        for r in live_recommendations:
+            mapped_recs.append({
+                "name": r.get('name'),
+                "industry": r.get('industry', niche),
+                "fit_score": r.get('fit_score'),
+                "reason": r.get('reason'),
+                "logo_url": r.get('logo_url'),
+                "source": "Web Search"
+            })
+            
+        # Fallback Logic (Mock/Safety)
+        if not mapped_recs:
+             recommendations_map = {
+                "Tech": [
+                    {"name": "NordVPN", "industry": "Cybersecurity", "fit_score": 95, "reason": "High affinity with tech audience", "logo_url": "https://ui-avatars.com/api/?name=NordVPN&background=0D8ABC&color=fff"},
+                    {"name": "Skillshare", "industry": "Education", "fit_score": 88, "reason": "Matches creative tech skills", "logo_url": "https://ui-avatars.com/api/?name=Skillshare&background=00FF84&color=000"},
+                    {"name": "Honey", "industry": "Ecommerce", "fit_score": 82, "reason": "Popular with savvy shoppers", "logo_url": "https://ui-avatars.com/api/?name=Honey&background=FFAA00&color=fff"}
+                ]
+            }
+             # Map defaults...
+             defaults = recommendations_map.get(niche, recommendations_map["Tech"])
+             for d in defaults:
+                 d["source"] = "Trending"
+                 mapped_recs.append(d)
+
+        return {
+            "niche": niche,
+            "potential_sponsors": mapped_recs
+        }
+    except Exception as e:
+        logger.error(f"Error fetching recommendations: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
 from fastapi.responses import PlainTextResponse
 
@@ -158,35 +193,217 @@ Based on our AI matching engine, here are top sponsors for this content:
         logger.error(f"Error exporting pitch deck: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate pitch deck")
 
+@router.post("/export-report")
+async def export_analysis_report(data: Dict[str, Any], current_user: dict = Depends(get_current_user)):
+    """
+    Generate and export a professional Analysis Report in DOCX format.
+    Accepts the full analysis object (so frontend state can be downloaded directly).
+    """
+    try:
+        docx_file = create_analysis_document(data)
+        
+        return StreamingResponse(
+            docx_file,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={
+                "Content-Disposition": f"attachment; filename=Analysis_Report_{data.get('video_id', 'report')}.docx"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error exporting report: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate report")
+
+@router.post("/generate-pitch")
+async def generate_pitch(request: PitchRequest, current_user: dict = Depends(get_current_user)):
+    """Generate an AI-powered sponsorship pitch email."""
+    try:
+        return generate_sponsorship_pitch(
+            request.video_id, 
+            request.brand_name, 
+            request.brand_details
+        )
+    except Exception as e:
+        logger.error(f"Error generating pitch: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate pitch")
+
+@router.post("/send-pitch")
+async def send_pitch(request: SendEmailRequest, current_user: dict = Depends(get_current_user)):
+    """Send a sponsorship pitch email using Resend."""
+    try:
+        result = resend_service.send_email(
+            to=request.to_email,
+            subject=request.subject,
+            html_content=request.body
+        )
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        return result
+    except Exception as e:
+        logger.error(f"Error sending pitch: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/past-campaigns")
+async def get_past_campaigns(current_user: dict = Depends(get_current_user)):
+    """Get past sponsorship campaigns for the influencer."""
+    return {
+        "campaigns": [
+            {
+                "id": "camp_1",
+                "brand": "NordVPN",
+                "status": "Completed",
+                "date": "2025-11-15",
+                "payout": "$1,200",
+                "deliverables": "60s integrated shoutout",
+                "performance": "45k clicks"
+            },
+            {
+                "id": "camp_2",
+                "brand": "Skillshare",
+                "status": "In Progress",
+                "date": "2026-01-10",
+                "payout": "$850",
+                "deliverables": "Link in description + Mention",
+                "performance": "Running"
+            }
+        ]
+    }
+
 @router.get("/top-influencers/{niche}")
 async def get_top_influencers(niche: str, current_user: dict = Depends(get_current_user)):
     """
     Get top influencers in a specific niche for brands to discover.
     """
-    influencers_map = {
-        "Tech": [
-            {"name": "Marques Brownlee", "handle": "@mkbhd", "engagement_rate": 8.5, "subscribers": "18.5M", "score": 98},
-            {"name": "Linus Tech Tips", "handle": "@LinusTechTips", "engagement_rate": 7.2, "subscribers": "15.6M", "score": 95},
-            {"name": "iJustine", "handle": "@ijustine", "engagement_rate": 6.8, "subscribers": "7.1M", "score": 92}
-        ],
-        "Gaming": [
-            {"name": "PewDiePie", "handle": "@pewdiepie", "engagement_rate": 5.4, "subscribers": "111M", "score": 97},
-            {"name": "MrBeast Gaming", "handle": "@mrbeastgaming", "engagement_rate": 12.1, "subscribers": "40M", "score": 99},
-            {"name": "Markiplier", "handle": "@markiplier", "engagement_rate": 7.8, "subscribers": "36M", "score": 96}
-        ],
-        "Lifestyle": [
-            {"name": "Casey Neistat", "handle": "@casey", "engagement_rate": 9.2, "subscribers": "12.6M", "score": 94},
-            {"name": "Emma Chamberlain", "handle": "@emmachamberlain", "engagement_rate": 11.5, "subscribers": "12M", "score": 98},
-            {"name": "Zoe Sugg", "handle": "@zoesugg", "engagement_rate": 5.5, "subscribers": "10M", "score": 89}
-        ],
-        "Business": [
-            {"name": "GaryVee", "handle": "@garyvee", "engagement_rate": 4.5, "subscribers": "4.2M", "score": 93},
-            {"name": "Graham Stephan", "handle": "@grahamstephan", "engagement_rate": 6.1, "subscribers": "4.5M", "score": 91},
-            {"name": "Ali Abdaal", "handle": "@aliabdaal", "engagement_rate": 7.4, "subscribers": "5.2M", "score": 95}
-        ]
-    }
-    
-    return {
-        "niche": niche,
-        "top_influencers": influencers_map.get(niche, influencers_map["Tech"])
-    }
+    try:
+        from services.influencer_discovery_service import influencer_discovery_service
+        
+        # 1. Fetch from Platform Database (DB)
+        db_influencers = influencer_discovery_service.discover_influencers(
+            niche=niche,
+            keywords=[niche],
+            campaign_description=f"Looking for {niche} influencers",
+            limit=5
+        )
+        
+        # 2. Fetch from Live Market (Tavily)
+        live_recommendations = get_ai_recommendations(niche, perspective="sponsor")
+        
+        mapped_recs = []
+        
+        # Process DB Results
+        for item in db_influencers:
+            inf = item.get("influencer", {})
+            score = item.get("relevance_score", 0)
+            reason = item.get("ai_analysis") or f"Platform Match: {score}% relevance based on profile analysis."
+            
+            # Get thumbnail from first channel if available
+            channels = inf.get("youtube_channels", [])
+            thumb = channels[0].get("thumbnail_url") if channels else None
+            # Or use UI Avatars
+            if not thumb:
+                 thumb = f"https://ui-avatars.com/api/?name={inf.get('full_name', 'User')}&background=random"
+
+            mapped_recs.append({
+                "name": inf.get("full_name") or inf.get("username", "Unknown"),
+                "niche": niche,
+                "thumbnail_url": thumb,
+                "fit_score": int(score),
+                "reason": reason,
+                "source": "Platform" # To distinguish in UI if needed
+            })
+
+        # Process Live Results
+        for r in live_recommendations:
+            mapped_recs.append({
+                "name": r.get('name'),
+                "niche": r.get('industry', niche),
+                "thumbnail_url": r.get('logo_url'),
+                "fit_score": r.get('fit_score'),
+                "reason": r.get('reason'),
+                "source": "Web Search"
+            })
+            
+        # Fallback if both empty
+        if not mapped_recs:
+            influencers_map = {
+                "Tech": [
+                    {"name": "Marques Brownlee", "handle": "@mkbhd", "engagement_rate": 8.5, "subscribers": "18.5M", "score": 98, "logo_url": "https://ui-avatars.com/api/?name=MKBHD&background=000&color=fff"},
+                    {"name": "Linus Tech Tips", "handle": "@LinusTechTips", "engagement_rate": 7.2, "subscribers": "15.6M", "score": 95, "logo_url": "https://ui-avatars.com/api/?name=LTT&background=FF6600&color=fff"},
+                    {"name": "iJustine", "handle": "@ijustine", "engagement_rate": 6.8, "subscribers": "7.1M", "score": 92, "logo_url": "https://ui-avatars.com/api/?name=iJustine&background=FF69B4&color=fff"}
+                ]
+            }
+            # ... (Existing mock logic simplified for brevity, or kept as failsafe)
+            mock_list = influencers_map.get(niche, influencers_map["Tech"])
+            for m in mock_list:
+                mapped_recs.append({
+                    "name": m.get("name"),
+                    "niche": niche,
+                    "thumbnail_url": m.get("logo_url"),
+                    "fit_score": m.get("score"),
+                    "reason": "Top trending creator in this category.",
+                    "source": "Trending"
+                })
+
+        # Sort by score
+        mapped_recs.sort(key=lambda x: x.get("fit_score", 0), reverse=True)
+            
+        return {
+            "niche": niche,
+            "top_influencers": mapped_recs
+        }
+    except Exception as e:
+        logger.error(f"Error fetching top influencers: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch top influencers")
+
+
+@router.get("/top-influencers")
+async def get_top_influencers(
+    niche: str = "",
+    limit: int = 10,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get top influencers for dashboard (Mock).
+    """
+    # Return list as expected by frontend
+    return [
+        {
+            "influencer_id": "inf_top_1",
+            "username": "TechReviewerPro",
+            "full_name": "Tech Reviewer Pro",
+            "niche": "Technology",
+            "score": 98,
+            "followers": 1500000,
+            "engagement_rate": 8.5,
+            "logo_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Tech"
+        },
+        {
+            "influencer_id": "inf_top_2",
+            "username": "GadgetGuru",
+            "full_name": "Gadget Guru",
+            "niche": "Consumer Electronics",
+            "score": 92,
+            "followers": 850000,
+            "engagement_rate": 7.2,
+            "logo_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Guru"
+        },
+        {
+            "influencer_id": "inf_top_3",
+            "username": "DailyVlogger",
+            "full_name": "Daily Vlogs",
+            "niche": "Lifestyle",
+            "score": 85,
+            "followers": 2100000,
+            "engagement_rate": 4.5,
+            "logo_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Vlog"
+        },
+         {
+            "influencer_id": "inf_top_4",
+            "username": "CreativeSpace",
+            "full_name": "Creative Space",
+            "niche": "Art",
+            "score": 82,
+            "followers": 500000,
+            "engagement_rate": 6.8,
+            "logo_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Art"
+        }
+    ]

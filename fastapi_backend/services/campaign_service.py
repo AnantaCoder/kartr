@@ -100,6 +100,30 @@ class CampaignService:
         }
     
     @staticmethod
+    def get_latest_campaign(sponsor_id: str) -> Optional[Dict[str, Any]]:
+        """Get the most recent campaign for a sponsor."""
+        campaigns = []
+        if is_firebase_configured():
+            from database import get_campaigns_repository
+            repo = get_campaigns_repository()
+            if repo:
+                all_campaigns = repo.find_by_field("sponsor_id", sponsor_id) or []
+                campaigns = all_campaigns
+        else:
+            campaigns = get_mock_db().list_campaigns(sponsor_id)
+        
+        if not campaigns:
+            return None
+            
+        # Sort by created_at descending and get the first one
+        campaigns.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        latest = campaigns[0]
+        
+        # Enrich with stages
+        latest["influencer_stages"] = CampaignService._get_influencer_stages(latest.get("id"))
+        return latest
+    
+    @staticmethod
     def _get_influencer_stages(campaign_id: str) -> Dict[str, int]:
         """Get influencer stage counts for a campaign."""
         stages = {

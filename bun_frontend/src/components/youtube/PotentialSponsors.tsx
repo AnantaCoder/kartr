@@ -8,6 +8,7 @@ interface Sponsor {
     industry: string;
     fit_score: number;
     reason: string;
+    logo_url?: string;
 }
 
 interface PotentialSponsorsProps {
@@ -41,9 +42,13 @@ const PotentialSponsors: React.FC<PotentialSponsorsProps> = ({ sponsors, themeCo
                         <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/5 blur-[80px] group-hover:bg-amber-500/10 transition-colors" />
 
                         <div className="flex items-start justify-between mb-8 relative z-10">
-                            <div className="p-4 bg-white/5 rounded-[24px] group-hover:bg-amber-500/10 group-hover:scale-110 transition-all duration-500">
-                                <Sparkles className="w-6 h-6 text-amber-500" />
-                            </div>
+                            {sponsor.logo_url ? (
+                                <img src={sponsor.logo_url} alt={sponsor.name} className="w-12 h-12 rounded-full object-cover border-2 border-white/5" />
+                            ) : (
+                                <div className="p-4 bg-white/5 rounded-[24px] group-hover:bg-amber-500/10 group-hover:scale-110 transition-all duration-500">
+                                    <Sparkles className="w-6 h-6 text-amber-500" />
+                                </div>
+                            )}
                             <div className="flex flex-col items-end">
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-amber-500 font-black text-3xl">{sponsor.fit_score}</span>
