@@ -14,7 +14,8 @@ const navItems = [
   { label: "Demo", href: "#demo" },
   { label: "Virtual AI", href: "/VirtualAi" },
   { label: "Enable Auto Posting", href: "/auto-posting" },
-   
+  { label: "My Campaigns", href: "/sponsor/campaigns/campaign_400cbdc66d28" },
+
 ];
 
 interface HeaderProps {
