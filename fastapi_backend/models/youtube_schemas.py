@@ -59,6 +59,17 @@ class VideoAnalysis(BaseModel):
     error: Optional[str] = Field(None, description="Error message if analysis failed")
 
 
+class Recommendation(BaseModel):
+    """A live recommendation from Tavily search"""
+    name: str
+    industry: Optional[str] = None
+    fit_score: int
+    reason: str
+    handle: Optional[str] = None
+    subscribers: Optional[str] = None
+    engagement_rate: Optional[float] = None
+
+
 class AnalyzeVideoResponse(BaseModel):
     """Response from video analysis endpoint with Gemini AI insights"""
     video_id: str = Field(..., description="YouTube video ID")
@@ -73,6 +84,7 @@ class AnalyzeVideoResponse(BaseModel):
     channel_title: Optional[str] = Field(None, description="Channel name")
     tags: Optional[List[str]] = Field(default=[], description="Video tags")
     analysis: Optional[VideoAnalysis] = Field(None, description="AI-generated analysis from Gemini")
+    recommendations: Optional[List[Recommendation]] = Field(default=[], description="Live market recommendations from Tavily")
     gemini_raw_response: Optional[str] = Field(None, description="Raw text response from Gemini AI")
     error: Optional[str] = Field(None, description="Error message if video fetch failed")
 

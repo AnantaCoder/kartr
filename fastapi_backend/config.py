@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     # Groq API (Fallback - Secondary)
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama3-70b-8192"
+
+    # Tavily Search API
+    TAVILY_API_KEY: str = ""
     
     # Email/SMTP settings
     EMAIL_USER: str = ""

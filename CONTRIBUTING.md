@@ -25,10 +25,10 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-#### Frontend
+#### Frontend (Bun)
 ```bash
 cd bun_frontend
-npm install
+bun install
 ```
 
 ### 4. Configure Environment
@@ -141,12 +141,13 @@ kartr/
 │   ├── models/             # Data models
 │   ├── tests/              # Test files
 │   └── utils/              # Helper functions
-├── bun_frontend/           # React frontend
+├── bun_frontend/           # Bun + React 19 frontend
 │   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── utils/
-└── docs/                   # Documentation
+│   │   ├── components/     # UI Components (shadcn/ui)
+│   │   ├── pages/          # View Components
+│   │   ├── store/          # Redux Toolkit
+│   │   └── assets/         # Media and Styles
+└── docs/                   # Contribution Guides & Technical Docs
 ```
 
 ## 🧪 Writing Tests

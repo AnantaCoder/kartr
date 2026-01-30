@@ -3,10 +3,11 @@ Service for AI-powered video analysis using Gemini with Grok (xAI) fallback.
 """
 import logging
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, List, Any, Optional
 
 from config import settings
 from services.youtube_service import youtube_service
+from services.tavily_service import tavily_service
 
 logger = logging.getLogger(__name__)
 
@@ -103,12 +104,63 @@ def analyze_influencer_sponsors(video_url: str) -> Dict[str, Any]:
     # Parse Result
     analysis = _parse_llm_response(response_text)
     
+    # Fetch Live Recommendations using Tavily
+    recommendations = []
+    if not analysis.get("error") and settings.TAVILY_API_KEY:
+        niche = analysis.get("influencer_niche", "Tech")
+        # In a more advanced version, we'd use the LLM again to parse Tavily results
+        # for simplicity here we fetch niche-based data
+        raw_recommendations = tavily_service.get_live_market_data(niche, is_creator=True)
+        
+        # Format raw search results into Recommendation objects using LLM
+        if raw_recommendations:
+            rec_prompt = _create_recommendation_prompt(niche, raw_recommendations)
+            rec_response, _ = _generate_with_fallback(rec_prompt)
+            if rec_response:
+                recommendations = _parse_recommendations(rec_response)
+
     return {
         **video_data,
         "analysis": analysis,
+        "recommendations": recommendations,
         "raw_response": response_text,
         "model_used": model_used
     }
+
+def _create_recommendation_prompt(niche: str, search_results: List[Dict[str, Any]]) -> str:
+    """Create a prompt to format search results into recommendations."""
+    context = "\n".join([f"- {r.get('title')}: {r.get('content')}" for r in search_results])
+    return f"""
+    Based on the following live market search results for the "{niche}" niche, generate 3 high-quality recommendations.
+    
+    If I am a Creator, recommend Sponsors/Brands to partner with.
+    If I am a Sponsor, recommend Influencers to hire.
+    
+    Search Results:
+    {context}
+    
+    Provide a JSON list of objects with these keys:
+    - name: Name of the brand or influencer
+    - industry: Their primary industry
+    - fit_score: Integer 0-100
+    - reason: Brief 1-sentence explanation of why they are a good fit
+    - handle: (Optional) Social handle
+    - subscribers: (Optional) Subscriber count string
+    - engagement_rate: (Optional) Engagement rate float
+    
+    Return ONLY the valid JSON list.
+    """
+
+def _parse_recommendations(text: str) -> List[Dict[str, Any]]:
+    """Parse recommendations from LLM response."""
+    try:
+        text = text.strip()
+        if text.startswith("```json"): text = text[7:]
+        elif text.startswith("```"): text = text[3:]
+        if text.endswith("```"): text = text[:-3]
+        return json.loads(text.strip())
+    except:
+        return []
 
 def analyze_bulk_influencer_sponsors(video_urls: list[str]) -> Dict[str, Any]:
     """
