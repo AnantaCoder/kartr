@@ -35,6 +35,7 @@ from .youtube_schemas import (
     AnalyzeChannelRequest,
     YouTubeChannelResponse,
     SaveAnalysisRequest,
+    BulkVideoAnalysisResponse,
 )
 
 from .search_schemas import (
@@ -107,6 +108,7 @@ __all__ = [
     "AnalyzeChannelRequest",
     "YouTubeChannelResponse",
     "SaveAnalysisRequest",
+    "BulkVideoAnalysisResponse",
     # Search
     "SearchRequest",
     "SearchResponse",
