@@ -10,6 +10,7 @@ import AutoPosting from '../pages/AutoPosting';
 import VirtualAi from '../pages/VirtualAi';
 import MvpShowcase from '../pages/MvpShowcase';
 import AdStudio from '../pages/AdStudio';
+import SponsorCampaign from '../pages/SponsorCampaign';
 
 const AppRoutes: React.FC = () => {
     return (
@@ -24,6 +25,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/VirtualAi" element={<VirtualAi />} />
             <Route path="/innovation-lab" element={<MvpShowcase />} />
             <Route path="/ad-studio" element={<AdStudio />} />
+            <Route path="/sponsor/campaigns/:id" element={<SponsorCampaign />} />
         </Routes>
     );
 };

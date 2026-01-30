@@ -38,6 +38,7 @@ from routers.bluesky import router as bluesky_router
 from routers.video_script import router as video_script_router
 from routers.ad_studio import router as ad_studio_router
 from routers.video import router as video_router
+from routers.influencer import router as influencer_router
 
 # Configure logging
 logging.basicConfig(
@@ -94,6 +95,7 @@ app.include_router(bluesky_router)
 app.include_router(video_script_router)
 app.include_router(ad_studio_router)
 app.include_router(video_router)
+app.include_router(influencer_router)
 
 
 @app.get("/")
