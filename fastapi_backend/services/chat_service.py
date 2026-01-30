@@ -416,49 +416,95 @@ class ChatService:
         Returns:
             Tuple of (success, ai_response, error_message)
         """
-        if not initialize_gemini():
-            # Return a helpful fallback message if Gemini is not available
-            fallback_response = (
-                "I'm sorry, but the AI service is currently unavailable. "
-                "Please make sure the Gemini API key is configured in the environment. "
-                "In the meantime, I can tell you that Kartr is a platform connecting "
-                "influencers with sponsors - feel free to explore our features!"
-            )
-            return True, fallback_response, None
+        # Try Gemini First
+        if initialize_gemini():
+            try:
+                # Get conversation history for context
+                messages_history, _ = cls.get_conversation_messages(
+                    conversation_id, user_id, page=1, page_size=20
+                )
+                
+                # Build conversation context for Gemini
+                chat_history = []
+                # Gemini expects history to be alternating user/model
+                # Our get_messages returns oldest first, which is correct for history
+                for msg in messages_history:
+                    # Skip the current user message if it was already saved to history (it shouldn't be, but good to be safe)
+                    if msg.get("content") == user_message and msg.get("role") == "user":
+                         continue
+                         
+                    role = "user" if msg.get("role") == "user" else "model"
+                    chat_history.append({
+                        "role": role,
+                        "parts": [msg.get("content", "")]
+                    })
+                
+                # Initialize the model with Kartr context
+                model = genai.GenerativeModel(
+                    model_name=settings.GEMINI_CHAT_MODEL,
+                    system_instruction=KARTR_CONTEXT
+                )
+                
+                # Start chat with history
+                chat = model.start_chat(history=chat_history)
+                
+                # Generate response
+                response = chat.send_message(user_message)
+                ai_response = response.text
+                
+                return True, ai_response, None
+                
+            except Exception as e:
+                logger.warning(f"Gemini chat failed: {e}. Attempting fallback to Groq...")
         
-        try:
-            # Get conversation history for context
-            messages_history, _ = cls.get_conversation_messages(
-                conversation_id, user_id, page=1, page_size=20
-            )
-            
-            # Build conversation context for Gemini
-            chat_history = []
-            for msg in messages_history:
-                role = "user" if msg.get("role") == "user" else "model"
-                chat_history.append({
-                    "role": role,
-                    "parts": [msg.get("content", "")]
-                })
-            
-            # Initialize the model with Kartr context
-            model = genai.GenerativeModel(
-                model_name=settings.GEMINI_CHAT_MODEL,
-                system_instruction=KARTR_CONTEXT
-            )
-            
-            # Start chat with history
-            chat = model.start_chat(history=chat_history)
-            
-            # Generate response
-            response = chat.send_message(user_message)
-            ai_response = response.text
-            
-            return True, ai_response, None
-            
-        except Exception as e:
-            logger.error(f"Error generating AI response: {e}")
-            return False, None, f"Failed to generate AI response: {str(e)}"
+        # Fallback to Groq
+        if settings.GROQ_API_KEY:
+            try:
+                try:
+                    from openai import OpenAI
+                except ImportError:
+                    logger.error("openai package not installed. Groq fallback unavailable.")
+                    raise Exception("Groq fallback unavailable: openai package missing")
+
+                client = OpenAI(
+                    api_key=settings.GROQ_API_KEY,
+                    base_url="https://api.groq.com/openai/v1"
+                )
+                
+                # Build context for Groq (OpenAI format)
+                messages = [
+                    {"role": "system", "content": KARTR_CONTEXT}
+                ]
+                
+                # Get history again
+                messages_history, _ = cls.get_conversation_messages(
+                    conversation_id, user_id, page=1, page_size=10 # Smaller context for Groq to be safe/fast
+                )
+                
+                for msg in messages_history:
+                     if msg.get("content") == user_message and msg.get("role") == "user":
+                         continue
+                     messages.append({
+                         "role": msg.get("role", "user"),
+                         "content": msg.get("content", "")
+                     })
+                
+                # Add current message
+                messages.append({"role": "user", "content": user_message})
+                
+                chat_completion = client.chat.completions.create(
+                    messages=messages,
+                    model=settings.GROQ_MODEL,
+                )
+                
+                return True, chat_completion.choices[0].message.content, None
+                
+            except Exception as e:
+                logger.error(f"Groq fallback failed: {e}")
+                
+        error_msg = "Failed to generate AI response from both Gemini and Groq."
+        logger.error(error_msg)
+        return False, None, error_msg
     
     @classmethod
     def send_message_and_get_response(

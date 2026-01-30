@@ -129,6 +129,37 @@ export const fetchYoutubeResults = createAsyncThunk<
   }
 });
 
+export const analyzeVideoFile = createAsyncThunk<
+  YoutubeResult[],
+  FormData
+>("youtube/analyzeFile", async (formData, thunkAPI) => {
+  try {
+    const res = await apiClient.post<AnalyzeVideoResponse>(
+      "/youtube/analyze-video-file",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    if (res.data.error) {
+      return thunkAPI.rejectWithValue(res.data.error);
+    }
+
+    const result = transformResponse(res.data);
+    return [result];
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.detail ||
+      error.response?.data?.error ||
+      error.message ||
+      "Failed to analyze video file";
+    return thunkAPI.rejectWithValue(errorMessage);
+  }
+});
+
 
 
 const youtubeSlice = createSlice({
@@ -153,6 +184,18 @@ const youtubeSlice = createSlice({
       .addCase(fetchYoutubeResults.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload as string || "Failed to fetch results"
+      })
+      .addCase(analyzeVideoFile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(analyzeVideoFile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.results = action.payload;
+      })
+      .addCase(analyzeVideoFile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || "Failed to analyze file";
       })
   }
 })

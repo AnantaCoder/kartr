@@ -6,7 +6,9 @@ import os
 import csv
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, HTTPException, status, Depends
+import shutil
+import tempfile
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File
 from models.schemas import (
     YouTubeStatsRequest,
     YouTubeStatsResponse,
@@ -174,6 +176,16 @@ async def analyze_video(
             raise HTTPException(status_code=400, detail="Either video_url or video_urls must be provided")
 
         result = analyze_influencer_sponsors(url_to_analyze)
+        
+        # Check for service-level error
+        if result and "error" in result:
+            # If there's an error, we can't return it as AnalyzeVideoResponse 
+            # because missing required fields (video_id, title) will cause 500 Validation Error.
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=result["error"]
+            )
+            
         return result
     except ImportError:
         # Fallback to basic video info
@@ -220,15 +232,30 @@ async def analyze_channel(
 ):
     """
     Analyze multiple videos from a YouTube channel.
+    Accepts Channel ID or URL.
     """
     try:
-        # Get channel info
+        # 1. Get channel info (resolves URL -> ID)
         channel_data = youtube_service.get_channel_stats(request.channel_id)
-        videos = youtube_service.get_channel_videos(request.channel_id, request.max_videos)
+        
+        if not channel_data or "error" in channel_data:
+            raise HTTPException(
+                status_code=400,
+                detail=channel_data.get("error", "Channel not found or invalid URL")
+            )
+
+        # 2. Extract resolved ID
+        resolved_channel_id = channel_data.get("channel_id")
+
+        # 3. Get videos using resolved ID
+        videos = youtube_service.get_channel_videos(resolved_channel_id, request.max_videos)
+        
         return {
             "channel": channel_data,
             "videos": videos
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Channel analysis error: {e}")
         raise HTTPException(
@@ -400,3 +427,39 @@ async def analyze_niche(current_user: dict = Depends(get_current_user)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+
+@router.post("/analyze-video-file")
+async def analyze_uploaded_video(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Analyze an uploaded MP4 video file.
+    """
+    try:
+        # Validate file type
+        if file.content_type != "video/mp4":
+            raise HTTPException(400, "Only MP4 files are supported")
+
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+            shutil.copyfileobj(file.file, tmp)
+            tmp_path = tmp.name
+        
+        try:
+            from services.analysis_service import analyze_video_file
+            result = analyze_video_file(tmp_path)
+            
+            if "error" in result:
+                raise HTTPException(400, result["error"])
+                
+            return result
+            
+        finally:
+            # Cleanup temp file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+                
+    except Exception as e:
+        logger.error(f"Upload analysis failed: {e}")
+        raise HTTPException(500, str(e))

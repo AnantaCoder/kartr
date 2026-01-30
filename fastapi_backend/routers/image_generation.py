@@ -101,11 +101,14 @@ async def generate_promotional_image(
             # Since standard image gen is Text->Image, passing images might raise error on some models.
             # We'll try passing images if supported, otherwise fallback to text only description.
             
-            # Prioritize configured model (likely 'gemini-3-pro-image-preview'), then Imagen 3, then Flash
+            # Prioritize configured model
             models_to_try = []
             if settings.GEMINI_IMAGE_MODEL:
                 models_to_try.append(settings.GEMINI_IMAGE_MODEL)
-            models_to_try.extend(["imagen-3.0-generate-001", "gemini-2.0-flash-exp"])
+            
+            # Fallback models
+            models_to_try.extend(["gemini-2.0-flash", "imagen-3.0-generate-001"])
+            
             # Deduplicate while preserving order
             models_to_try = list(dict.fromkeys(models_to_try))
             
@@ -113,60 +116,67 @@ async def generate_promotional_image(
                 try:
                     logger.info(f"Attempting generation with Gemini model: {model}")
                     
-                    # Construct request
-                    # For simple text-to-image models, passing PIL images in 'contents' might fail if it expects string.
-                    # We will try passing just text if images are present but model rejects multimodal.
+                    # Gemini 2.0 Flash / Pro supports image generation via generate_content (Imagen 3 under the hood for some endpoints)
+                    # or via dedicated methods. The Google GenAI SDK unifies this.
+                    # We will try the standard generate_content first.
                     
                     try:
                         response = client.models.generate_content(
                             model=model,
                             contents=contents, # List containing [text, image, image...]
                             config=types.GenerateContentConfig(
-                                response_modalities=['TEXT', 'IMAGE']
+                                response_modalities=['IMAGE'] # Explicitly request IMAGE
                             )
                         )
                     except Exception as e_multi:
-                        # If multimodal input fails (not supported for image gen), fallback to text-only prompt
-                        if "invalid_argument" in str(e_multi).lower() and uploaded_images:
-                            logger.warning(f"Model {model} may not support image inputs for generation. Retrying text-only.")
-                            # enhance prompt to say we can't use reference directly
-                            text_only_prompt = full_prompt + " (Note: Generate based on description as reference images could not be processed)."
-                            response = client.models.generate_content(
-                                model=model,
-                                contents=text_only_prompt,
-                                config=types.GenerateContentConfig(
-                                    response_modalities=['TEXT', 'IMAGE']
-                                )
+                        # If multimodal input fails or model expects text-only for image gen
+                        logger.warning(f"Model {model} generation failed with multimodal inputs: {e_multi}")
+                        
+                        # Fallback to text-only prompt
+                        text_only_prompt = full_prompt
+                        if uploaded_images:
+                             text_only_prompt += " (Note: Generate based on description as reference images could not be processed)."
+                             
+                        response = client.models.generate_content(
+                            model=model,
+                            contents=text_only_prompt,
+                            config=types.GenerateContentConfig(
+                                response_modalities=['IMAGE']
                             )
-                        else:
-                            raise e_multi
+                        )
 
                     # Extract the image from response
-                    if response.candidates and response.candidates[0].content.parts:
-                        for part in response.candidates[0].content.parts:
-                            if part.inline_data and part.inline_data.mime_type.startswith('image/'):
-                                # Decode and save locally
-                                image_data = part.inline_data.data
-                                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                                import uuid
-                                filename = f"gen_{timestamp}_{uuid.uuid4().hex[:8]}.png"
-                                
-                                # Ensure directory exists
-                                output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'generated_images')
-                                os.makedirs(output_dir, exist_ok=True)
-                                
-                                file_path = os.path.join(output_dir, filename)
-                                with open(file_path, "wb") as f:
-                                    f.write(image_data)
-                                    
-                                logger.info(f"Image saved locally to: {file_path}")
+                    if response.candidates:
+                         # Check for generated images in parts
+                         for candidate in response.candidates:
+                             if hasattr(candidate.content, 'parts'):
+                                 for part in candidate.content.parts:
+                                     if part.inline_data and part.inline_data.mime_type.startswith('image/'):
+                                         # Decode and save locally
+                                         image_data = part.inline_data.data
+                                         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                                         import uuid
+                                         filename = f"gen_{timestamp}_{uuid.uuid4().hex[:8]}.png"
+                                         
+                                         # Ensure directory exists
+                                         output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'generated_images')
+                                         os.makedirs(output_dir, exist_ok=True)
+                                         
+                                         file_path = os.path.join(output_dir, filename)
+                                         with open(file_path, "wb") as f:
+                                             f.write(image_data)
+                                             
+                                         logger.info(f"Image saved locally to: {file_path}")
 
-                                image_base64 = base64.b64encode(image_data).decode('utf-8')
-                                return ImageGenerationResponse(
-                                    success=True,
-                                    image_base64=image_base64,
-                                    model_used=model
-                                )
+                                         image_base64 = base64.b64encode(image_data).decode('utf-8')
+                                         return ImageGenerationResponse(
+                                             success=True,
+                                             image_base64=image_base64,
+                                             model_used=model
+                                         )
+                             # Check for assets (Imagen 3 specific in some SDK versions)
+                             # This depends on the specific SDK version structure.
+                             
                 except Exception as e:
                     logger.warning(f"Gemini model {model} failed: {e}")
                     continue

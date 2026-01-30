@@ -57,13 +57,13 @@ const BulkAnalysis: React.FC = () => {
   // Calculate aggregate stats
   const calculateStats = () => {
     if (!videos || videos.length === 0) return null;
-    
+
     const totalViews = videos.reduce((sum, v) => sum + v.view_count, 0);
     const totalLikes = videos.reduce((sum, v) => sum + v.like_count, 0);
     const totalComments = videos.reduce((sum, v) => sum + v.comment_count, 0);
     const sponsoredCount = videos.filter(v => v.is_sponsored).length;
-    const avgEngagement = videos.length > 0 
-      ? ((totalLikes + totalComments) / (totalViews * videos.length)) * 100 
+    const avgEngagement = videos.length > 0
+      ? ((totalLikes + totalComments) / (totalViews * videos.length)) * 100
       : 0;
 
     return {
@@ -137,7 +137,7 @@ const BulkAnalysis: React.FC = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Enter YouTube Channel ID (e.g., UCAiLfjNXkNv24uhpzUgPa6A)"
+              placeholder="Enter YouTube Channel ID or URL (e.g., https://youtube.com/@channel or UCAi...)"
               value={channelId}
               onChange={(e) => setChannelId(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -313,10 +313,10 @@ const BulkAnalysis: React.FC = () => {
                     </thead>
                     <tbody>
                       {videos.map((video, index) => {
-                        const engagement = video.view_count > 0 
+                        const engagement = video.view_count > 0
                           ? ((video.like_count + video.comment_count) / video.view_count * 100).toFixed(2)
                           : "0.00";
-                        
+
                         return (
                           <motion.tr
                             key={video.video_id}
@@ -326,7 +326,7 @@ const BulkAnalysis: React.FC = () => {
                             className="border-b border-white/5 hover:bg-white/5 transition-colors"
                           >
                             <td className="px-4 py-3">
-                              <a 
+                              <a
                                 href={`https://youtube.com/watch?v=${video.video_id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -341,11 +341,10 @@ const BulkAnalysis: React.FC = () => {
                             <td className="px-4 py-3">{video.comment_count.toLocaleString()}</td>
                             <td className="px-4 py-3 text-green-400 font-semibold">{engagement}%</td>
                             <td className="px-4 py-3">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                                video.is_sponsored 
-                                  ? 'bg-purple-500/20 text-purple-300' 
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${video.is_sponsored
+                                  ? 'bg-purple-500/20 text-purple-300'
                                   : 'bg-gray-500/20 text-gray-300'
-                              }`}>
+                                }`}>
                                 {video.is_sponsored ? `${video.sponsor_name || 'Sponsored'}` : 'No'}
                               </span>
                             </td>

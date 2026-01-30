@@ -8,7 +8,7 @@ import { registerInfluencer, selectAuthLoading, selectAuthError, clearError, sig
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, User, Mail, Lock, Phone, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, Phone, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import KartrLine from '../components/common/KartrLine';
 import bg_img from "../assets/auth/bg_img.png";
 
@@ -34,27 +34,23 @@ const SignupInfluencer: React.FC = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 py-12"
-      style={{
-        backgroundImage: `url(${bg_img})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }}
-    >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 via-transparent to-pink-900/30" />
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#020617] relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-purple-600/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full bg-pink-600/10 blur-[120px]" />
+      </div>
 
       <motion.div
-        className="relative w-full max-w-lg"
+        className="relative z-10 w-full max-w-lg"
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5 }}
       >
         {/* Card */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/95 via-purple-50/90 to-blue-50/90 backdrop-blur-xl shadow-2xl border border-white/20">
+        <div className="relative overflow-hidden rounded-[32px] bg-slate-900/50 backdrop-blur-xl shadow-2xl border border-white/10">
           {/* Decorative gradient */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500" />
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-50" />
 
           {/* Header */}
           <div className="pt-8 pb-4 px-8 text-center">
@@ -62,20 +58,21 @@ const SignupInfluencer: React.FC = () => {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring" }}
-              className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/30 mb-4"
+              className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 shadow-lg shadow-purple-500/10 mb-4 group relative"
             >
-              <Sparkles className="w-7 h-7 text-white" />
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 opacity-20 blur-lg group-hover:opacity-30 transition-opacity" />
+              <Sparkles className="w-7 h-7 text-purple-400 relative z-10" />
             </motion.div>
 
-            <h1 className="text-2xl font-bold text-gray-800 mb-1">
+            <h1 className="text-2xl font-black text-white mb-1 tracking-tight">
               Join as an Influencer
             </h1>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-400 text-sm font-medium">
               Start your journey and grow your influence
             </p>
 
-            <div className="flex justify-center mt-3">
-              <KartrLine width={100} color="#ec4899" text="Kartr" />
+            <div className="flex justify-center mt-4">
+              <div className="h-1 w-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full opacity-50" />
             </div>
           </div>
 
@@ -85,44 +82,44 @@ const SignupInfluencer: React.FC = () => {
               {/* Name Row */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="firstName" className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
                     First Name
                   </Label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <div className="relative group">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400">
                       <User className="w-4 h-4" />
                     </div>
                     <Input
                       id="firstName"
                       placeholder="First name"
                       {...register('firstName')}
-                      className="h-11 pl-10 text-sm rounded-xl border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                      className="h-11 pl-10 text-sm rounded-xl bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:bg-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 transition-all font-medium"
                     />
                   </div>
                   {errors.firstName && (
-                    <p className="text-xs text-red-500">{errors.firstName.message}</p>
+                    <p className="text-xs text-red-400 ml-1">{errors.firstName.message}</p>
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-                    Last Name <span className="text-gray-400 text-xs">(Optional)</span>
+                  <Label htmlFor="lastName" className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
+                    Last Name <span className="text-gray-600 text-[10px]">(Optional)</span>
                   </Label>
                   <Input
                     id="lastName"
                     placeholder="Last name"
                     {...register('lastName')}
-                    className="h-11 text-sm rounded-xl border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    className="h-11 text-sm rounded-xl bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:bg-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 transition-all font-medium"
                   />
                 </div>
               </div>
 
               {/* Mobile */}
               <div className="space-y-1.5">
-                <Label htmlFor="mobile" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="mobile" className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
                   Mobile Number
                 </Label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400">
                     <Phone className="w-4 h-4" />
                   </div>
                   <Input
@@ -130,21 +127,21 @@ const SignupInfluencer: React.FC = () => {
                     type="tel"
                     placeholder="Enter 10-digit mobile number"
                     {...register('mobile')}
-                    className="h-11 pl-10 text-sm rounded-xl border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    className="h-11 pl-10 text-sm rounded-xl bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:bg-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 transition-all font-medium"
                   />
                 </div>
                 {errors.mobile && (
-                  <p className="text-xs text-red-500">{errors.mobile.message}</p>
+                  <p className="text-xs text-red-400 ml-1">{errors.mobile.message}</p>
                 )}
               </div>
 
               {/* Email */}
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="email" className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
                   Email Address
                 </Label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400">
                     <Mail className="w-4 h-4" />
                   </div>
                   <Input
@@ -152,21 +149,21 @@ const SignupInfluencer: React.FC = () => {
                     type="email"
                     placeholder="Enter your email"
                     {...register('email')}
-                    className="h-11 pl-10 text-sm rounded-xl border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    className="h-11 pl-10 text-sm rounded-xl bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:bg-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 transition-all font-medium"
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-xs text-red-500">{errors.email.message}</p>
+                  <p className="text-xs text-red-400 ml-1">{errors.email.message}</p>
                 )}
               </div>
 
               {/* Password */}
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="password" className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
                   Password
                 </Label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <div className="relative group">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400">
                     <Lock className="w-4 h-4" />
                   </div>
                   <Input
@@ -174,29 +171,29 @@ const SignupInfluencer: React.FC = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder="Min 8 characters"
                     {...register('password')}
-                    className="h-11 pl-10 pr-10 text-sm rounded-xl border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                    className="h-11 pl-10 pr-10 text-sm rounded-xl bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:bg-white/10 focus:border-purple-500/50 focus:ring-purple-500/20 transition-all font-medium"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(prev => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-xs text-red-500">{errors.password.message}</p>
+                  <p className="text-xs text-red-400 ml-1">{errors.password.message}</p>
                 )}
               </div>
 
               {/* Error Message */}
               {authError && (
                 <motion.div
-                  className="p-3 rounded-xl bg-red-50 border border-red-100"
+                  className="p-3 rounded-xl bg-red-500/10 border border-red-500/20"
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <p className="text-sm text-red-600 text-center">
+                  <p className="text-sm text-red-400 text-center font-medium">
                     {authError}
                   </p>
                 </motion.div>
@@ -206,15 +203,12 @@ const SignupInfluencer: React.FC = () => {
               <motion.div whileTap={{ scale: 0.98 }} className="pt-2">
                 <Button
                   type="submit"
-                  className="w-full h-11 text-base font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl shadow-lg shadow-purple-500/25 transition-all cursor-pointer"
+                  className="w-full h-11 text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl shadow-lg shadow-purple-500/25 border border-white/10 transition-all cursor-pointer"
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
+                      <Loader2 className="animate-spin h-5 w-5" />
                       Creating account...
                     </span>
                   ) : (
@@ -229,9 +223,9 @@ const SignupInfluencer: React.FC = () => {
 
             {/* Login Link */}
             <div className="text-center mt-5">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-500">
                 Already have an account?{' '}
-                <Link to="/login" className="text-purple-600 hover:text-purple-800 font-medium transition-colors">
+                <Link to="/login" className="text-purple-400 hover:text-purple-300 font-bold transition-colors">
                   Log in
                 </Link>
               </p>
@@ -246,8 +240,9 @@ const SignupInfluencer: React.FC = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <Link to="/" className="text-white/80 hover:text-white text-sm transition-colors">
-            ← Back to Home
+          <Link to="/" className="text-gray-500 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2">
+            <ArrowRight className="w-4 h-4 rotate-180" />
+            Back to Home
           </Link>
         </motion.div>
       </motion.div>

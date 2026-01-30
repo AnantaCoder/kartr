@@ -5,6 +5,8 @@ import uuid
 import asyncio
 import hashlib
 import requests
+import cv2
+import numpy as np
 from typing import Optional, List, Tuple, Dict, Any
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -20,17 +22,13 @@ torch = None
 DiffusionPipeline = None
 DPMSolverMultistepScheduler = None
 export_to_video = None
-np = None
-cv2 = None
 
 def _import_ml_libs():
-    global torch, DiffusionPipeline, DPMSolverMultistepScheduler, export_to_video, np, cv2
+    global torch, DiffusionPipeline, DPMSolverMultistepScheduler, export_to_video
     try:
         import torch
         from diffusers import DiffusionPipeline, DPMSolverMultistepScheduler
         from diffusers.utils import export_to_video
-        import numpy as np
-        import cv2
         return True
     except Exception as e:
         logger.warning(f"ML libraries for video generation not available or incompatible: {e}")
@@ -184,7 +182,170 @@ class LocalVideoService:
             return True, rel_path, None
         except Exception as e:
             logger.error(f"Video generation error: {e}", exc_info=True)
-            return False, None, str(e)
+    @classmethod
+    async def generate_slideshow_fallback(cls, prompt: str, user_id: str) -> Dict[str, Any]:
+        """
+        Generate a slideshow video locally using Pollinations.ai images + OpenCV.
+        100% Free fallback when other methods fail.
+        """
+        try:
+            logger.info("Initializing Slideshow Fallback generation...")
+            
+            # 1. Generate Image Prompts using Gemini (or simple split if unavailable)
+            image_prompts = []
+            try:
+                # Import here to avoid circular dep or issues
+                from google import genai
+                from config import settings
+                
+                if settings.GEMINI_API_KEY:
+                    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                    # Ask for 4 visual scenes
+                    response = client.models.generate_content(
+                        model=settings.GEMINI_TEXT_MODEL or "gemini-2.0-flash",
+                        contents=f"Create 4 distinct, detailed visual image descriptions to tell a story for the video concept: '{prompt}'. Return ONLY the descriptions, one per line."
+                    )
+                    image_prompts = [line.strip() for line in response.text.split('\n') if line.strip() and len(line) > 10][:4]
+            except Exception as e:
+                logger.warning(f"Could not generate intelligent prompts for slideshow: {e}")
+            
+            # Fallback prompts if AI failed
+            if not image_prompts:
+                image_prompts = [
+                    f"{prompt}, cinematic, establishing shot",
+                    f"{prompt}, close up details, high quality",
+                    f"{prompt}, action shot, dynamic lighting",
+                    f"{prompt}, chaotic finale, dramatic",
+                ]
+
+            # 2. Generate Images via Pollinations.ai
+            images = []
+            import httpx
+            import urllib.parse
+            import random
+            
+            async with httpx.AsyncClient(follow_redirects=True) as http_client:
+                for target_prompt in image_prompts:
+                    try:
+                        encoded = urllib.parse.quote(target_prompt)
+                        seed = random.randint(0, 999999)
+                        # Use Flux model for best quality
+                        url = f"https://image.pollinations.ai/prompt/{encoded}?width=1280&height=720&model=flux&nologo=true&seed={seed}"
+                        
+                        logger.info(f"Generating slide: {url}")
+                        resp = await http_client.get(url, timeout=60.0)
+                        
+                        if resp.status_code == 200:
+                            # Convert to numpy array for OpenCV
+                            image_array = np.asarray(bytearray(resp.content), dtype=np.uint8)
+                            img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+                            if img is not None:
+                                images.append(img)
+                            else:
+                                logger.warning(f"Failed to decode image from Pollinations for prompt: {target_prompt}")
+                        else:
+                            logger.warning(f"Pollinations returned status {resp.status_code} for prompt: {target_prompt}")
+                            
+                    except Exception as e:
+                        logger.warning(f"Failed to generate slide for '{target_prompt}': {e}")
+            
+            if len(images) < 2:
+                logger.warning("Pollinations.ai failed to generate enough images. Falling back to LOCAL TEXT SLIDES.")
+                images = [] # Reset
+                width, height = 1280, 720
+                
+                # Ensure we have at least some prompts
+                if not image_prompts:
+                    image_prompts = [prompt]
+
+                for i, txt in enumerate(image_prompts):
+                    try:
+                        # Create black image
+                        img = np.zeros((height, width, 3), dtype=np.uint8)
+                        
+                        # Add text
+                        font = cv2.FONT_HERSHEY_SIMPLEX
+                        font_scale = 1.0
+                        color = (255, 255, 255)
+                        thickness = 2
+                        
+                        # Simple text wrapping
+                        words = txt.split()
+                        lines = []
+                        current_line = []
+                        for word in words:
+                            current_line.append(word)
+                            if len(' '.join(current_line)) > 50: # Approx char limit
+                                lines.append(' '.join(current_line[:-1]))
+                                current_line = [word]
+                        lines.append(' '.join(current_line))
+                        
+                        # Draw lines centered
+                        total_text_height = len(lines) * 50
+                        y = (height - total_text_height) // 2
+                        
+                        for line in lines:
+                            text_size = cv2.getTextSize(line, font, font_scale, thickness)[0]
+                            x = (width - text_size[0]) // 2
+                            # Ensure x is positive
+                            x = max(10, x)
+                            cv2.putText(img, line, (x, y + 40), font, font_scale, color, thickness)
+                            y += 50
+                            
+                        images.append(img)
+                    except Exception as e_text:
+                        logger.error(f"Failed to create text slide: {e_text}")
+                
+                if not images:
+                    # Final fallback if even text fails (should effectively never happen)
+                    img = np.zeros((720, 1280, 3), dtype=np.uint8)
+                    cv2.putText(img, "Video Generation Failed", (400, 360), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+                    images.append(img)
+
+            # 3. Create Video using OpenCV
+            video_filename = f"slideshow_{uuid.uuid4().hex[:8]}.mp4"
+            output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'outputs', 'videos')
+            os.makedirs(output_dir, exist_ok=True)
+            video_path = os.path.join(output_dir, video_filename)
+            
+            # Setup Video Writer
+            height, width, _ = images[0].shape
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v') # Universal fallback
+            fps = 24
+            duration_per_slide = 2 # seconds
+            frames_per_slide = fps * duration_per_slide
+            
+            out = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
+            
+            for img in images:
+                # Resize if needed to match first frame
+                if img.shape[:2] != (height, width):
+                    img = cv2.resize(img, (width, height))
+                
+                # Write static frame for duration
+                for _ in range(frames_per_slide):
+                    out.write(img)
+                    
+            out.release()
+            
+            # 4. Return formatted response (mimicking Veo response)
+            rel_path = f"/api/videos/download/{video_filename}" # Serve via API
+            
+            return {
+                "success": True,
+                "video_url": rel_path,
+                "video_filename": video_filename,
+                "storyboard": "\n\n".join(image_prompts),
+                "cache_key": "fallback_slideshow",
+                "model_used": "pollinations-slideshow (free)",
+                "duration_seconds": len(images) * duration_per_slide,
+                "remaining_requests": 999,
+                "created_at": datetime.now().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Slideshow fallback failed: {e}")
+            raise e
 
     @classmethod
     def get_task_status(cls, task_id: str) -> Optional[Dict[str, Any]]:
@@ -308,7 +469,7 @@ class VideoService:
         
         client = self._get_client()
         
-        storyboard_prompt = f\"\"\"
+        storyboard_prompt = f"""
 Create a detailed cinematic storyboard for a {VIDEO_DURATION_SECONDS}-second video.
 
 Theme/Prompt: {prompt}
@@ -324,7 +485,7 @@ Requirements:
 - Style: Cinematic, professional, engaging
 
 Output the storyboard in a clear numbered format.
-\"\"\"
+"""
         
         try:
             response = client.models.generate_content(
@@ -401,17 +562,17 @@ Output the storyboard in a clear numbered format.
         # Record this request
         self._record_request(user_id)
         
-        # Generate storyboard first
-        storyboard_result = await self.generate_storyboard(prompt, user_id)
-        
-        # Get best Veo model
-        veo_model = self._find_best_veo_model()
-        logger.info(f"Using Veo model: {veo_model}")
-        
-        # Build video prompt from original prompt + storyboard context
-        video_prompt = f"{prompt}. Cinematic quality, professional lighting, smooth camera movements."
-        
         try:
+            # Generate storyboard first
+            storyboard_result = await self.generate_storyboard(prompt, user_id)
+            
+            # Get best Veo model
+            veo_model = self._find_best_veo_model()
+            logger.info(f"Using Veo model: {veo_model}")
+            
+            # Build video prompt from original prompt + storyboard context
+            video_prompt = f"{prompt}. Cinematic quality, professional lighting, smooth camera movements."
+        
             from google.genai import types
             
             client = self._get_client()
@@ -480,8 +641,13 @@ Output the storyboard in a clear numbered format.
             }
             
         except Exception as e:
-            logger.error(f"Video generation failed: {e}")
-            raise RuntimeError(f"Video generation failed: {str(e)}")
+            logger.warning(f"Veo video generation failed: {e}. Attempting free fallback (Slideshow)...")
+            try:
+                # Fallback to free slideshow generator
+                return await LocalVideoService.generate_slideshow_fallback(prompt, user_id)
+            except Exception as e_fallback:
+                logger.error(f"Fallback video generation also failed: {e_fallback}")
+                raise RuntimeError(f"Video generation failed: {str(e)} -> Fallback error: {str(e_fallback)}")
     
     def get_cached_storyboard(self, cache_key: str) -> Optional[Dict[str, Any]]:
         """Retrieve a cached storyboard"""

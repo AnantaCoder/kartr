@@ -12,6 +12,11 @@ export type YoutubeAnalysis = {
   content_summary?: string
   sentiment?: string
   key_topics?: string[]
+  hook_rating?: "High" | "Medium" | "Low"
+  retention_risk?: "High" | "Medium" | "Low"
+  brand_safety_score?: number
+  cpm_estimate?: string
+  video_category?: string
   error?: string
 }
 
@@ -23,6 +28,7 @@ export type Recommendation = {
   handle?: string
   subscribers?: string
   engagement_rate?: number
+  logo_url?: string
 }
 
 export type YoutubeResult = {

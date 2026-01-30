@@ -7,16 +7,15 @@ import KartrLine from "../common/KartrLine";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser, selectIsAuthenticated, logout } from "../../store/slices/authSlice";
 import type { AppDispatch } from "../../store/store";
+import { ModeToggle } from "../ModeToggle";
 
 const navItems = [
   { label: "Home", href: "/" },
   { label: "YouTube Analysis", href: "/YoutubeAnalysis" },
   { label: "Bulk Analysis", href: "/BulkAnalysis" },
-
   { label: "Virtual AI", href: "/VirtualAi" },
   { label: "Enable Auto Posting", href: "/auto-posting" },
   { label: "My Campaigns", href: "/sponsor/campaigns/campaign_400cbdc66d28" },
-
 ];
 
 interface HeaderProps {
@@ -88,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
   return (
     <>
       <motion.header
-        className={`fixed top-0 left-0 w-full z-50 backdrop-blur-md ${bgClass ? bgClass : "bg-white/5"}`}
+        className={`fixed top-0 left-0 w-full z-50 backdrop-blur-md ${bgClass ? bgClass : "bg-background/80 border-b border-border/40"}`}
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
@@ -108,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
 
             {/* CENTER NAV — DESKTOP ONLY (lg+) */}
             <nav className="hidden lg:flex items-center">
-              <div className="flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 backdrop-blur-md p-1.5 border border-white/10">
+              <div className="flex items-center gap-1 rounded-full bg-secondary/50 backdrop-blur-md p-1.5 border border-border">
                 {navItems.map((item) => {
                   const isActive = location.pathname === item.href;
                   return (
@@ -120,8 +119,8 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                         rounded-full
                         transition-all duration-200
                         ${isActive
-                          ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
-                          : "text-gray-300 hover:bg-white/10 hover:text-white"
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                         }
                       `}
                     >
@@ -134,6 +133,8 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
 
             {/* RIGHT - AUTH BUTTONS */}
             <div className="flex items-center gap-2 sm:gap-3">
+              <ModeToggle />
+
               {/* Login/Signup buttons - hidden on mobile, show on md+ */}
               <div className="hidden md:flex items-center gap-2">
                 {isAuthenticated && user ? (
@@ -141,15 +142,15 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                     {/* Username Button */}
                     <button
                       onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center text-primary-foreground text-sm font-bold">
                         {user.full_name?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase() || 'U'}
                       </div>
-                      <span className="text-gray-200 text-sm font-medium max-w-[100px] truncate">
+                      <span className="text-foreground text-sm font-medium max-w-[100px] truncate">
                         {user.username}
                       </span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {/* Dropdown Menu */}
@@ -160,13 +161,13 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.95 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute right-0 mt-2 w-56 rounded-xl bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-xl overflow-hidden"
+                          className="absolute right-0 mt-2 w-56 rounded-xl bg-card border border-border shadow-xl overflow-hidden"
                         >
                           {/* User Info Header */}
-                          <div className="px-4 py-3 border-b border-white/10">
-                            <p className="text-sm font-medium text-white truncate">{user.full_name || user.username}</p>
-                            <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs capitalize">
+                          <div className="px-4 py-3 border-b border-border">
+                            <p className="text-sm font-medium text-foreground truncate">{user.full_name || user.username}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs capitalize">
                               {user.user_type}
                             </span>
                           </div>
@@ -175,14 +176,14 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                           <div className="p-2">
                             <Link
                               to={getDashboardRoute()}
-                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-foreground hover:bg-secondary transition-colors"
                             >
                               <LayoutDashboard className="w-4 h-4" />
                               <span className="text-sm">Dashboard</span>
                             </Link>
                             <Link
                               to={getProfileRoute()}
-                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-foreground hover:bg-secondary transition-colors"
                             >
                               <User className="w-4 h-4" />
                               <span className="text-sm">My Profile</span>
@@ -190,10 +191,10 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                           </div>
 
                           {/* Logout */}
-                          <div className="p-2 border-t border-white/10">
+                          <div className="p-2 border-t border-border">
                             <button
                               onClick={handleLogout}
-                              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
+                              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
                             >
                               <LogOut className="w-4 h-4" />
                               <span className="text-sm">Logout</span>
@@ -208,14 +209,14 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                     <Link to="/login">
                       <Button
                         variant="ghost"
-                        className="text-gray-300 hover:text-white hover:bg-white/10"
+                        className="text-foreground hover:bg-secondary"
                       >
                         Login
                       </Button>
                     </Link>
                     <Link to="/signup-influencer">
                       <Button
-                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/25"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
                       >
                         Get Started
                       </Button>
@@ -226,7 +227,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
 
               {/* Hamburger - visible until lg */}
               <button
-                className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+                className="lg:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-label="Toggle menu"
               >
@@ -235,9 +236,9 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                   transition={{ duration: 0.2 }}
                 >
                   {menuOpen ? (
-                    <X className="w-6 h-6 text-white" />
+                    <X className="w-6 h-6 text-foreground" />
                   ) : (
-                    <Menu className="w-6 h-6 text-white" />
+                    <Menu className="w-6 h-6 text-foreground" />
                   )}
                 </motion.div>
               </button>
@@ -255,7 +256,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
               transition={{ duration: 0.3 }}
               className="lg:hidden overflow-hidden"
             >
-              <div className="bg-slate-900/98 backdrop-blur-xl border-t border-white/10 px-4 sm:px-6 py-6 space-y-4">
+              <div className="bg-background/98 backdrop-blur-xl border-t border-border px-4 sm:px-6 py-6 space-y-4">
                 {/* Nav Items */}
                 <div className="flex flex-col gap-1">
                   {navItems.map((item, index) => {
@@ -273,8 +274,8 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                             block px-4 py-3 rounded-xl text-base font-medium
                             transition-all duration-200
                             ${isActive
-                              ? "bg-purple-500/20 text-purple-400 border-l-4 border-purple-500"
-                              : "text-gray-300 hover:bg-white/5 hover:text-white"
+                              ? "bg-primary/10 text-primary border-l-4 border-primary"
+                              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                             }
                           `}
                         >
@@ -286,18 +287,18 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                 </div>
 
                 {/* Divider */}
-                <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <div className="h-px bg-border" />
 
                 {/* Auth Buttons - visible on mobile */}
                 <div className="flex flex-col sm:flex-row gap-3 md:hidden">
                   {isAuthenticated && user ? (
                     <>
-                      <div className="w-full px-4 py-2 text-gray-300 text-sm font-medium border border-white/10 rounded-lg text-center">
+                      <div className="w-full px-4 py-2 text-foreground text-sm font-medium border border-border rounded-lg text-center">
                         Signed in as {user.username}
                       </div>
                       <Button
                         variant="outline"
-                        className="w-full border-white/20 text-white hover:bg-white/10"
+                        className="w-full border-border text-foreground hover:bg-secondary"
                         onClick={handleLogout}
                       >
                         <LogOut className="w-4 h-4 mr-2" />
@@ -309,14 +310,14 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
                       <Link to="/login" className="flex-1">
                         <Button
                           variant="outline"
-                          className="w-full border-white/20 text-white hover:bg-white/10"
+                          className="w-full border-border text-foreground hover:bg-secondary"
                         >
                           Login
                         </Button>
                       </Link>
                       <Link to="/signup-influencer" className="flex-1">
                         <Button
-                          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                         >
                           Get Started
                         </Button>
