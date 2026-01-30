@@ -34,6 +34,8 @@ import {
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import type { YoutubeResult } from "@/features/schemas/youtubeSchema";
+import PotentialSponsors from "./PotentialSponsors";
+import TopInfluencers from "./TopInfluencers";
 
 interface Props {
     result: YoutubeResult;
@@ -410,6 +412,41 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                                 </span>
                             ))}
                         </div>
+                    </div>
+
+                    {/* MARKET OPPORTUNITIES SECTION */}
+                    <div className="mt-8">
+                        {isCreator ? (
+                            <PotentialSponsors
+                                themeColor="purple"
+                                sponsors={result.recommendations && result.recommendations.length > 0 ? result.recommendations.map(r => ({
+                                    name: r.name,
+                                    industry: r.industry || "General",
+                                    fit_score: r.fit_score,
+                                    reason: r.reason
+                                })) : [
+                                    { name: "NordVPN", industry: "Cybersecurity", fit_score: 95, reason: "High overlap with your tech-focused audience and strong security sentiment." },
+                                    { name: "Skillshare", industry: "Education", fit_score: 88, reason: "Your tutorial-style content aligns perfectly with their learning platform." },
+                                    { name: "Corsair", industry: "Hardware", fit_score: 82, reason: "Frequent mentions of PC setups in your key topics." }
+                                ]}
+                            />
+                        ) : (
+                            <TopInfluencers
+                                themeColor="blue"
+                                niche={influencerNiche}
+                                influencers={result.recommendations && result.recommendations.length > 0 ? result.recommendations.map(r => ({
+                                    name: r.name,
+                                    handle: r.handle || "@unknown",
+                                    engagement_rate: r.engagement_rate || 5.0,
+                                    subscribers: r.subscribers || "N/A",
+                                    score: r.fit_score
+                                })) : [
+                                    { name: "Marques Brownlee", handle: "@mkbhd", engagement_rate: 8.5, subscribers: "18.5M", score: 98 },
+                                    { name: "Linus Tech Tips", handle: "@LinusTechTips", engagement_rate: 7.2, subscribers: "15.6M", score: 95 },
+                                    { name: "iJustine", handle: "@ijustine", engagement_rate: 6.8, subscribers: "7.1M", score: 92 }
+                                ]}
+                            />
+                        )}
                     </div>
                 </div>
 

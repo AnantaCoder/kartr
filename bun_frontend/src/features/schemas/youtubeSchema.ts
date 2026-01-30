@@ -15,6 +15,16 @@ export type YoutubeAnalysis = {
   error?: string
 }
 
+export type Recommendation = {
+  name: string
+  industry?: string
+  fit_score: number
+  reason: string
+  handle?: string
+  subscribers?: string
+  engagement_rate?: number
+}
+
 export type YoutubeResult = {
   video_id: string
 
@@ -34,5 +44,6 @@ export type YoutubeResult = {
   sponsors?: Sponsor[]
 
   analysis?: YoutubeAnalysis
+  recommendations?: Recommendation[]
   model_used?: string
 }
