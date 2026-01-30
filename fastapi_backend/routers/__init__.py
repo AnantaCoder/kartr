@@ -8,3 +8,4 @@ from routers.image_generation import router as image_generation_router
 from routers.visualization import router as visualization_router
 from routers.utilities import router as utilities_router
 from routers.chat import router as chat_router
+from routers.video import router as video_router

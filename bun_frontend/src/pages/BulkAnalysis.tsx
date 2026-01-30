@@ -1,0 +1,380 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Header from "../components/layout/Header";
+import Footer from "../components/layout/Footer";
+import BackgroundVideo from "../components/common/BackgroundVideo";
+import { motion } from "framer-motion";
+import { Search, AlertCircle, Loader2, BarChart3, Users, Eye, Flame } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "../store/store";
+import { useAppSelector } from "../store/hooks";
+import { selectIsAuthenticated, selectAuthInitialized } from "../store/slices/authSlice";
+import { fetchBulkAnalysisResults, clearResults } from "../store/slices/bulkAnalysisSlice";
+
+const BulkAnalysis: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { channel, videos, loading, error } = useSelector(
+    (state: RootState) => state.bulkAnalysis
+  );
+
+  // Auth check
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isInitialized = useAppSelector(selectAuthInitialized);
+
+  const [channelId, setChannelId] = useState("");
+  const [numVideos, setNumVideos] = useState(10);
+
+  const handleSearch = async () => {
+    if (!channelId.trim() || numVideos <= 0) return;
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: '/BulkAnalysis' } });
+      return;
+    }
+
+    dispatch(
+      fetchBulkAnalysisResults({
+        channel_id: channelId.trim(),
+        max_videos: numVideos,
+      })
+    );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleClear = () => {
+    setChannelId("");
+    setNumVideos(10);
+    dispatch(clearResults());
+  };
+
+  // Calculate aggregate stats
+  const calculateStats = () => {
+    if (!videos || videos.length === 0) return null;
+    
+    const totalViews = videos.reduce((sum, v) => sum + v.view_count, 0);
+    const totalLikes = videos.reduce((sum, v) => sum + v.like_count, 0);
+    const totalComments = videos.reduce((sum, v) => sum + v.comment_count, 0);
+    const sponsoredCount = videos.filter(v => v.is_sponsored).length;
+    const avgEngagement = videos.length > 0 
+      ? ((totalLikes + totalComments) / (totalViews * videos.length)) * 100 
+      : 0;
+
+    return {
+      totalViews,
+      totalLikes,
+      totalComments,
+      sponsoredCount,
+      avgEngagement,
+      avgLikesPerVideo: Math.round(totalLikes / videos.length),
+      avgCommentsPerVideo: Math.round(totalComments / videos.length)
+    };
+  };
+
+  const stats = calculateStats();
+
+  // Show loading while checking auth
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <BackgroundVideo />
+      <Header />
+
+      <motion.section
+        className="relative flex flex-col items-center justify-center text-center px-6 py-28
+                   overflow-hidden min-h-[100dvh]"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        {/* BACKGROUND GLOW */}
+        <div className="absolute -top-32 -z-10 h-[400px] w-[400px] rounded-full bg-indigo-500/20 blur-3xl" />
+
+        {/* Icon */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: "spring" }}
+          className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg shadow-blue-500/30 mb-6"
+        >
+          <BarChart3 className="w-8 h-8 text-white" />
+        </motion.div>
+
+        {/* Title */}
+        <h1 className="text-3xl md:text-4xl text-white font-semibold leading-tight">
+          Bulk Channel
+          <span className="text-purple-400"> Analysis</span> &
+          <span className="text-pink-400"> Insights</span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-3 max-w-xl text-gray-400 text-sm md:text-base">
+          Analyze YouTube videos from a channel to get comprehensive
+          insights about sponsorships, audience engagement, and performance metrics.
+        </p>
+
+        {/* Search Box */}
+        <motion.div
+          className="mt-10 flex w-full max-w-2xl flex-col gap-4 mb-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          {/* Channel ID Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Enter YouTube Channel ID (e.g., UCAiLfjNXkNv24uhpzUgPa6A)"
+              value={channelId}
+              onChange={(e) => setChannelId(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="pl-9 h-12 rounded-xl w-full
+                         bg-white/10 border-white/20
+                         text-white placeholder:text-gray-400
+                         focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                         transition-all"
+            />
+          </div>
+
+          {/* Number of Videos Input */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                type="number"
+                placeholder="Number of videos to analyze"
+                value={numVideos}
+                onChange={(e) => setNumVideos(Math.max(1, parseInt(e.target.value) || 10))}
+                min="1"
+                max="100"
+                onKeyDown={handleKeyDown}
+                className="h-12 rounded-xl
+                           bg-white/10 border-white/20
+                           text-white placeholder:text-gray-400
+                           focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                           transition-all px-4"
+              />
+            </div>
+
+            <Button
+              onClick={handleSearch}
+              disabled={loading || !channelId.trim() || numVideos <= 0}
+              className="h-12 px-6 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 rounded-xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                "Analyze"
+              )}
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* RESULTS SLOT */}
+        <div className="mt-6 w-full max-w-7xl">
+          {/* Loading State */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center gap-3 py-8"
+            >
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-blue-500/30 rounded-full" />
+                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin" />
+              </div>
+              <p className="text-sm text-gray-400">
+                AI is analyzing channel data...
+              </p>
+              <p className="text-xs text-gray-500">
+                This may take a few seconds
+              </p>
+            </motion.div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-3 py-6 px-4 rounded-2xl bg-red-500/10 border border-red-500/30"
+            >
+              <AlertCircle className="w-8 h-8 text-red-400" />
+              <div className="text-center">
+                <p className="text-sm text-red-400 font-medium">Analysis Failed</p>
+                <p className="text-xs text-red-300 mt-1">{error}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClear}
+                className="mt-2 border-red-500/50 text-red-400 hover:bg-red-500/10 cursor-pointer"
+              >
+                Try Again
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Results */}
+          {!loading && channel && videos.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-lg font-semibold text-white">Analysis Results</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClear}
+                  className="text-gray-400 hover:text-white cursor-pointer"
+                >
+                  Clear
+                </Button>
+              </div>
+
+              {/* Channel Header */}
+              <div className="mb-8 pb-6 border-b border-white/10">
+                <div className="flex items-start gap-4">
+                  <img
+                    src={channel.thumbnail_url}
+                    alt={channel.title}
+                    className="w-20 h-20 rounded-full object-cover"
+                  />
+                  <div className="flex-1 text-left">
+                    <h3 className="text-xl font-bold text-white mb-1">{channel.title}</h3>
+                    <p className="text-sm text-gray-400 mb-3">{channel.description}</p>
+                    <div className="text-xs text-gray-500">{channel.custom_url}</div>
+                  </div>
+                </div>
+
+                {/* Channel Stats */}
+                {stats && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div className="bg-white/5 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Users className="w-4 h-4 text-blue-400" />
+                        <p className="text-xs text-gray-400">Subscribers</p>
+                      </div>
+                      <p className="text-lg font-semibold text-white">{(channel.subscriber_count / 1000000).toFixed(1)}M</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Eye className="w-4 h-4 text-purple-400" />
+                        <p className="text-xs text-gray-400">Total Views</p>
+                      </div>
+                      <p className="text-lg font-semibold text-white">{(channel.view_count / 1000000).toFixed(1)}M</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Flame className="w-4 h-4 text-orange-400" />
+                        <p className="text-xs text-gray-400">Videos</p>
+                      </div>
+                      <p className="text-lg font-semibold text-white">{channel.video_count}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Flame className="w-4 h-4 text-red-400" />
+                        <p className="text-xs text-gray-400">Sponsored</p>
+                      </div>
+                      <p className="text-lg font-semibold text-white">{stats.sponsoredCount}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Videos Table */}
+              <div>
+                <h3 className="text-base font-semibold text-white mb-4">Videos Analyzed</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-gray-300">
+                    <thead className="text-xs uppercase bg-white/5 text-gray-200">
+                      <tr>
+                        <th scope="col" className="px-4 py-3 font-semibold">Title</th>
+                        <th scope="col" className="px-4 py-3 font-semibold">Views</th>
+                        <th scope="col" className="px-4 py-3 font-semibold">Likes</th>
+                        <th scope="col" className="px-4 py-3 font-semibold">Comments</th>
+                        <th scope="col" className="px-4 py-3 font-semibold">Engagement</th>
+                        <th scope="col" className="px-4 py-3 font-semibold">Sponsored</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {videos.map((video, index) => {
+                        const engagement = video.view_count > 0 
+                          ? ((video.like_count + video.comment_count) / video.view_count * 100).toFixed(2)
+                          : "0.00";
+                        
+                        return (
+                          <motion.tr
+                            key={video.video_id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                          >
+                            <td className="px-4 py-3">
+                              <a 
+                                href={`https://youtube.com/watch?v=${video.video_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-blue-400 hover:text-blue-300 line-clamp-1 max-w-xs"
+                                title={video.title}
+                              >
+                                {video.title}
+                              </a>
+                            </td>
+                            <td className="px-4 py-3">{(video.view_count / 1000000).toFixed(2)}M</td>
+                            <td className="px-4 py-3 text-red-400 font-semibold">{video.like_count.toLocaleString()}</td>
+                            <td className="px-4 py-3">{video.comment_count.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-green-400 font-semibold">{engagement}%</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                                video.is_sponsored 
+                                  ? 'bg-purple-500/20 text-purple-300' 
+                                  : 'bg-gray-500/20 text-gray-300'
+                              }`}>
+                                {video.is_sponsored ? `${video.sponsor_name || 'Sponsored'}` : 'No'}
+                              </span>
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !channel && !error && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-sm text-gray-500 text-center py-8"
+            >
+              Enter a YouTube channel ID and specify the number of videos to analyze
+            </motion.p>
+          )}
+        </div>
+      </motion.section>
+
+      <Footer />
+    </>
+  );
+};
+
+export default BulkAnalysis;

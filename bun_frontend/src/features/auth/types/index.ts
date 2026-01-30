@@ -6,6 +6,9 @@ export interface User {
   full_name?: string;
   date_registered?: string;
   email_visible?: boolean;
+  keywords?: string[];
+  niche?: string;
+  bluesky_handle?: string;
 }
 
 export interface AuthResponse {

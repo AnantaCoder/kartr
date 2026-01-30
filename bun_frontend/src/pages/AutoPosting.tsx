@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
-import { Loader } from "lucide-react";
+import { Loader, Lock } from "lucide-react";
+import { useAppSelector } from "../store/hooks";
+import { selectIsAuthenticated, selectAuthInitialized } from "../store/slices/authSlice";
 
 const API_BASE_URL = "http://localhost:8000";
 
 const AutoPosting: React.FC = () => {
+  const navigate = useNavigate();
+
+  // Auth check
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isInitialized = useAppSelector(selectAuthInitialized);
+
   const [caption, setCaption] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -12,6 +21,13 @@ const AutoPosting: React.FC = () => {
   const [useAIImage, setUseAIImage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (isInitialized && !isAuthenticated) {
+      navigate('/login', { state: { from: '/auto-posting' } });
+    }
+  }, [isAuthenticated, isInitialized, navigate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -48,8 +64,7 @@ const AutoPosting: React.FC = () => {
       // Get JWT token from localStorage
       const token = localStorage.getItem("token");
       if (!token) {
-        setMessage({ type: "error", text: "Please login first" });
-        setIsLoading(false);
+        navigate('/login', { state: { from: '/auto-posting' } });
         return;
       }
 
@@ -187,7 +202,6 @@ const AutoPosting: React.FC = () => {
                   />
                 </div>
               </div>
-
               <button
                 type="submit"
                 disabled={isLoading}
