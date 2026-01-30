@@ -22,6 +22,7 @@ from .auth_schemas import (
     ForgotPasswordRequest,
     OTPVerifyRequest,
     GoogleLoginRequest,
+    UserProfileUpdate,
 )
 
 from .youtube_schemas import (
@@ -97,6 +98,7 @@ __all__ = [
     "ForgotPasswordRequest",
     "OTPVerifyRequest",
     "GoogleLoginRequest",
+    "UserProfileUpdate",
     # YouTube
     "YouTubeStatsRequest",
     "YouTubeStatsResponse",

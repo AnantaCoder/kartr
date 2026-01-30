@@ -13,6 +13,7 @@ from models.schemas import (
     OTPVerifyRequest,
     GoogleLoginRequest,
     MessageResponse,
+    UserProfileUpdate,
 )
 from services.auth_service import AuthService
 from utils.security import verify_otp
@@ -266,5 +267,54 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         user_type=current_user["user_type"],
         full_name=current_user.get("full_name", ""),
         date_registered=current_user.get("date_registered", ""),
-        email_visible=current_user.get("email_visible", False)
+        email_visible=current_user.get("email_visible", False),
+        bluesky_handle=current_user.get("bluesky_handle"),
+        keywords=current_user.get("keywords", []) or [],
+        niche=current_user.get("niche")
+    )
+
+
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(
+    update_data: UserProfileUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Update current user's profile.
+    
+    Updateable fields:
+    - **full_name**: User's display name
+    - **keywords**: List of descriptive keywords
+    - **email_visible**: Whether email is public
+    """
+    data_to_update = update_data.dict(exclude_unset=True)
+    
+    # Filter out None values
+    data_to_update = {k: v for k, v in data_to_update.items() if v is not None}
+    
+    if not data_to_update:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fields to update"
+        )
+        
+    updated_user = AuthService.update_user(current_user["id"], data_to_update)
+    
+    if not updated_user:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update profile"
+        )
+        
+    return UserResponse(
+        id=updated_user["id"],
+        username=updated_user["username"],
+        email=updated_user["email"],
+        user_type=updated_user["user_type"],
+        full_name=updated_user.get("full_name", ""),
+        date_registered=updated_user.get("date_registered", ""),
+        email_visible=updated_user.get("email_visible", False),
+        bluesky_handle=updated_user.get("bluesky_handle"),
+        keywords=updated_user.get("keywords", []) or [],
+        niche=updated_user.get("niche")
     )

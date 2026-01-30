@@ -103,6 +103,20 @@ def get_virtual_influencers_repository() -> Optional['FirestoreRepository']:
     return FirestoreRepository('virtual_influencers')
 
 
+def get_campaigns_repository() -> Optional['FirestoreRepository']:
+    """Get repository for campaigns collection."""
+    if not is_firebase_configured():
+        return None
+    return FirestoreRepository('campaigns')
+
+
+def get_campaign_influencers_repository() -> Optional['FirestoreRepository']:
+    """Get repository for campaign_influencers collection."""
+    if not is_firebase_configured():
+        return None
+    return FirestoreRepository('campaign_influencers')
+
+
 # =============================================================================
 # Mock Database for Development
 # =============================================================================
@@ -119,11 +133,15 @@ class MockDatabase:
         self._users: Dict[str, Dict[str, Any]] = {}
         self._youtube_channels: Dict[str, Dict[str, Any]] = {}
         self._searches: Dict[str, Dict[str, Any]] = {}
+        self._campaigns: Dict[str, Dict[str, Any]] = {}
+        self._campaign_influencers: Dict[str, Dict[str, Any]] = {}
         self._id_counters = {
             'users': 0,
             'youtube_channels': 0,
             'searches': 0,
             'virtual_influencers': 0,
+            'campaigns': 0,
+            'campaign_influencers': 0,
         }
         self._virtual_influencers: Dict[str, Dict[str, Any]] = {}
         
@@ -326,6 +344,88 @@ class MockDatabase:
     def get_virtual_influencer_by_id(self, vi_id: str) -> Optional[Dict[str, Any]]:
         """Get virtual influencer by ID."""
         return self._virtual_influencers.get(str(vi_id))
+
+    # -------------------------------------------------------------------------
+    # Campaign Operations
+    # -------------------------------------------------------------------------
+    
+    def create_campaign(self, campaign_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a campaign."""
+        # Use provided ID if available (from Service uuid generation) or generate one
+        campaign_id = campaign_data.get('id') or self._generate_id('campaigns')
+        campaign = campaign_data.copy()
+        campaign['id'] = campaign_id
+        self._campaigns[campaign_id] = campaign
+        return campaign
+        
+    def get_campaign(self, campaign_id: str) -> Optional[Dict[str, Any]]:
+        """Get campaign by ID."""
+        return self._campaigns.get(str(campaign_id))
+        
+    def list_campaigns(self, sponsor_id: str) -> List[Dict[str, Any]]:
+        """List campaigns for a sponsor."""
+        return [
+            c for c in self._campaigns.values() 
+            if str(c.get('sponsor_id')) == str(sponsor_id)
+        ]
+        
+    def update_campaign(self, campaign_id: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update campaign."""
+        campaign_id = str(campaign_id)
+        if campaign_id not in self._campaigns:
+            return None
+        self._campaigns[campaign_id].update(data)
+        return self._campaigns[campaign_id]
+        
+    def delete_campaign(self, campaign_id: str) -> bool:
+        """Delete campaign."""
+        campaign_id = str(campaign_id)
+        if campaign_id in self._campaigns:
+            del self._campaigns[campaign_id]
+            return True
+        return False
+
+    # -------------------------------------------------------------------------
+    # Campaign Influencer Operations
+    # -------------------------------------------------------------------------
+    
+    def add_campaign_influencer(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Add influencer to campaign (create record)."""
+        record_id = self._generate_id('campaign_influencers')
+        record = data.copy()
+        record['id'] = record_id
+        self._campaign_influencers[record_id] = record
+        return record
+        
+    def get_campaign_influencers(self, campaign_id: str) -> List[Dict[str, Any]]:
+        """Get all influencers for a campaign."""
+        return [
+            i for i in self._campaign_influencers.values()
+            if str(i.get('campaign_id')) == str(campaign_id)
+        ]
+        
+    def get_influencer_campaigns(self, influencer_id: str) -> List[Dict[str, Any]]:
+        """Get all campaigns for an influencer."""
+        return [
+            i for i in self._campaign_influencers.values()
+            if str(i.get('influencer_id')) == str(influencer_id)
+        ]
+        
+    def get_campaign_influencer_record(self, campaign_id: str, influencer_id: str) -> Optional[Dict[str, Any]]:
+        """Get specific campaign-influencer record."""
+        for record in self._campaign_influencers.values():
+            if str(record.get('campaign_id')) == str(campaign_id) and \
+               str(record.get('influencer_id')) == str(influencer_id):
+                return record
+        return None
+    
+    def update_campaign_influencer(self, record_id: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Update campaign-influencer record."""
+        record_id = str(record_id)
+        if record_id not in self._campaign_influencers:
+            return None
+        self._campaign_influencers[record_id].update(data)
+        return self._campaign_influencers[record_id]
 
 
 # Global mock database instance (singleton)

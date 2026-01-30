@@ -72,3 +72,46 @@ from models.chat_schemas import (
     UpdateConversationTitleRequest,
     DeleteConversationResponse,
 )
+
+# Admin schemas
+from models.admin_schemas import (
+    AdminUserResponse,
+    UserListResponse,
+    UserUpdateRequest,
+    UserFilterParams,
+    PlatformAnalytics,
+    AdminDashboardResponse,
+)
+
+# Campaign schemas
+from models.campaign_schemas import (
+    CampaignCreate,
+    CampaignUpdate,
+    CampaignResponse,
+    CampaignListResponse,
+    InfluencerMatch,
+    CampaignInfluencersResponse,
+    AddInfluencerRequest,
+)
+
+# Virtual influencer schemas (database-driven)
+from models.virtual_influencer_schemas import (
+    VirtualInfluencerCreate,
+    VirtualInfluencerUpdate,
+    VirtualInfluencerResponse,
+    VirtualInfluencerListResponse,
+    RentVirtualInfluencerRequest,
+    RentalResponse,
+    AutoPostRequest,
+)
+
+# Performance tracking schemas
+from models.tracking_schemas import (
+    PerformanceLogCreate,
+    PerformanceLogResponse,
+    PerformanceMetrics,
+    CampaignPerformance,
+    InfluencerPerformance,
+    PerformanceReportRequest,
+)
+
