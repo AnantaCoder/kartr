@@ -6,8 +6,6 @@ import SignupInfluencer from '../pages/SignupInfluencer';
 import SignupSponsor from '../pages/SignupSponsor';
 import YoutubeAnalysis from '../pages/YoutubeAnalysis';
 import ForgotPassword from '../pages/ForgotPassword';
-import Header from "../components/layout/Header";
-import Footer from "../components/layout/Footer";
 import AutoPosting from '../pages/AutoPosting';
 import VirtualAi from '../pages/VirtualAi';
 import MvpShowcase from '../pages/MvpShowcase';

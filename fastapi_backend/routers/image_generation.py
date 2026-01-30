@@ -10,8 +10,6 @@ from datetime import datetime
 from models.schemas import GenerateImageRequest, GenerateLLMImageRequest, ImageGenerationResponse
 from utils.dependencies import get_current_user
 from config import settings
-from services.storage_service import storage_service
-from services.cloudinary_service import cloudinary_service
 
 logger = logging.getLogger(__name__)
 
@@ -44,45 +42,14 @@ async def generate_promotional_image(
     user_id = current_user.get("uid", "anonymous")
     logger.info(f"Image generation request from user {user_id} for brand {brand_name}")
 
-    # 2. GROQ PROMPT ENHANCEMENT - Use AI to create better prompts
-    enhanced_prompt = prompt
-    
-    if settings.GROQ_API_KEY:
-        try:
-            logger.info("Using Groq to enhance image generation prompt...")
-            
-            # Ask Groq to create a detailed, creative prompt (simplified to avoid 400 errors)
-            groq_prompt = f"Create a detailed image generation prompt for: '{prompt}' for brand '{brand_name}'. Make it professional, specific about lighting/composition/colors. Only return the enhanced prompt."
-            
-            url = "https://api.groq.com/openai/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": settings.GROQ_MODEL,
-                "messages": [{"role": "user", "content": groq_prompt}],
-                "temperature": 0.7,
-                "max_tokens": 200,
-            }
-            
-            async with httpx.AsyncClient(timeout=15.0) as groq_client:
-                response = await groq_client.post(url, headers=headers, json=payload)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    enhanced_prompt = data['choices'][0]['message']['content'].strip()
-                    # Remove quotes if Groq added them
-                    enhanced_prompt = enhanced_prompt.strip('"').strip("'")
-                    logger.info(f"Groq enhanced prompt: {enhanced_prompt[:100]}...")
-                else:
-                    logger.warning(f"Groq enhancement failed ({response.status_code}), using original prompt")
-                    
-        except Exception as e:
-            logger.warning(f"Groq prompt enhancement failed: {e}, using original")
+    # Build the prompt with brand context and user details
+    # You might want to pull more user preferences if available in current_user
+    full_prompt = (
+        f"Generate a high-quality professional promotional image for the brand '{brand_name}'."
+        f"\n\nTask: {prompt}"
+        "\n\nStyle: Professional, visually striking, photorealistic (unless specified otherwise)."
+    )
 
-    # Build the full prompt with brand context
-    full_prompt = f"Professional promotional image for {brand_name}: {enhanced_prompt}"
     contents = [full_prompt]
     image_descriptions = []
 
@@ -188,26 +155,12 @@ async def generate_promotional_image(
                                 output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'generated_images')
                                 os.makedirs(output_dir, exist_ok=True)
                                 
-                                # Optimization: Cleanup old images (older than 1 hour)
-                                storage_service.cleanup_directory(output_dir, max_age_hours=1)
-                                
                                 file_path = os.path.join(output_dir, filename)
                                 with open(file_path, "wb") as f:
                                     f.write(image_data)
                                     
                                 logger.info(f"Image saved locally to: {file_path}")
 
-                                # Upload to Cloudinary instead of just saving locally
-                                cloudinary_url = cloudinary_service.upload_image(image_data)
-                                if cloudinary_url:
-                                    logger.info(f"Image uploaded to Cloudinary: {cloudinary_url}")
-                                    return ImageGenerationResponse(
-                                        success=True,
-                                        image_url=cloudinary_url,
-                                        model_used=model
-                                    )
-                                
-                                # Fallback if Cloudinary fails
                                 image_base64 = base64.b64encode(image_data).decode('utf-8')
                                 return ImageGenerationResponse(
                                     success=True,
@@ -235,9 +188,8 @@ async def generate_promotional_image(
         encoded_prompt = urllib.parse.quote(fallback_prompt)
         # Add random seed to avoid caching same result
         import random
-        seed = random.randint(0, 1000000)
-        # Optimization: Use 512x512 for demo speed and space
-        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true&seed={seed}&model=flux"
+        seed = random.randint(0, 10000)
+        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={seed}&model=flux"
         
         async with httpx.AsyncClient(timeout=120.0) as http_client:
             response = await http_client.get(image_url, follow_redirects=True)
@@ -254,26 +206,12 @@ async def generate_promotional_image(
                     output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'generated_images')
                     os.makedirs(output_dir, exist_ok=True)
                     
-                    # Optimization: Cleanup old images
-                    storage_service.cleanup_directory(output_dir, max_age_hours=1)
-                    
                     file_path = os.path.join(output_dir, filename)
                     with open(file_path, "wb") as f:
                         f.write(image_data)
                         
                     logger.info(f"Image saved locally to: {file_path}")
                     
-                    # Upload to Cloudinary
-                    cloudinary_url = cloudinary_service.upload_image(image_data)
-                    if cloudinary_url:
-                        logger.info(f"Fallback image uploaded to Cloudinary: {cloudinary_url}")
-                        return ImageGenerationResponse(
-                            success=True,
-                            image_url=cloudinary_url,
-                            model_used="pollinations.ai (flux)",
-                            error="Note: Reference images were ignored in fallback mode." if uploaded_images else None
-                        )
-
                     image_base64 = base64.b64encode(image_data).decode('utf-8')
                     return ImageGenerationResponse(
                         success=True,

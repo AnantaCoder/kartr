@@ -9,8 +9,6 @@ import logging
 from datetime import datetime
 from typing import Optional, Dict, Any, List, Tuple
 import uuid
-import json
-import os
 
 from config import settings
 from database import is_firebase_configured, get_mock_db
@@ -149,14 +147,6 @@ class ChatService:
     def _generate_message_id() -> str:
         """Generate a unique message ID."""
         return str(uuid.uuid4())
-    
-    @classmethod
-    def _get_rag_context(cls, keywords: List[str]) -> str:
-        """
-        Retrieve relevant context for RAG via RagService.
-        """
-        from services.rag_service import RagService
-        return RagService.get_context(keywords)
     
     @classmethod
     def create_conversation(
@@ -409,7 +399,7 @@ class ChatService:
         return True, message_data, None
     
     @classmethod
-    async def generate_ai_response(
+    def generate_ai_response(
         cls,
         conversation_id: str,
         user_id: str,
@@ -451,16 +441,10 @@ class ChatService:
                     "parts": [msg.get("content", "")]
                 })
             
-            # Retrieve RAG context
-            keywords = user_message.lower().split()
-            rag_context = cls._get_rag_context(keywords)
-            
-            # Initialize the model with dynamic context
-            full_system_prompt = f"{KARTR_CONTEXT}\n\n## REAL-TIME DATA (RAG CONTEXT):\n{rag_context}"
-            
+            # Initialize the model with Kartr context
             model = genai.GenerativeModel(
                 model_name=settings.GEMINI_CHAT_MODEL,
-                system_instruction=full_system_prompt
+                system_instruction=KARTR_CONTEXT
             )
             
             # Start chat with history
@@ -473,59 +457,11 @@ class ChatService:
             return True, ai_response, None
             
         except Exception as e:
-            logger.warning(f"Gemini API failed: {e}. Attempting fallback to Groq...")
-            
-            # Groq Fallback (HTTP-based for compatibility)
-            if settings.GROQ_API_KEY:
-                try:
-                    import httpx
-                    
-                    # Convert history to Groq format
-                    groq_messages = [{"role": "system", "content": KARTR_CONTEXT}]
-                    for msg in messages_history:
-                        role = "user" if msg.get("role") == "user" else "assistant"
-                        groq_messages.append({
-                            "role": role,
-                            "content": msg.get("content", "")
-                        })
-                    
-                    # Add current message
-                    groq_messages.append({"role": "user", "content": user_message})
-                    
-                    # Make HTTP request to Groq API
-                    url = "https://api.groq.com/openai/v1/chat/completions"
-                    headers = {
-                        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                        "Content-Type": "application/json"
-                    }
-                    payload = {
-                        "model": settings.GROQ_MODEL,
-                        "messages": groq_messages,
-                        "temperature": 0.7,
-                        "max_tokens": 1024,
-                    }
-                    
-                    async with httpx.AsyncClient(timeout=30.0) as http_client:
-                        response = await http_client.post(url, headers=headers, json=payload)
-                        
-                        if response.status_code == 200:
-                            data = response.json()
-                            ai_response = data['choices'][0]['message']['content']
-                            logger.info(f"Successfully used Groq fallback (model: {data.get('model', 'unknown')})")
-                            return True, ai_response, None
-                        else:
-                            logger.error(f"Groq HTTP error {response.status_code}: {response.text}")
-                            raise Exception(f"Groq API returned {response.status_code}")
-                    
-                except Exception as groq_error:
-                    logger.error(f"Groq fallback failed: {groq_error}")
-                    return False, None, f"AI service unavailable. Gemini error: {str(e)}. Groq error: {str(groq_error)}"
-            
             logger.error(f"Error generating AI response: {e}")
             return False, None, f"Failed to generate AI response: {str(e)}"
     
     @classmethod
-    async def send_message_and_get_response(
+    def send_message_and_get_response(
         cls,
         conversation_id: str,
         user_id: str,
@@ -556,7 +492,7 @@ class ChatService:
             return False, None, error
         
         # Generate AI response
-        success, ai_response, error = await cls.generate_ai_response(
+        success, ai_response, error = cls.generate_ai_response(
             conversation_id, user_id, user_message
         )
         if not success:

@@ -1,10 +1,15 @@
-import React from "react";
-import { motion } from "framer-motion";
 import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
     PieChart,
     Pie,
     Cell,
-    ResponsiveContainer,
+    Legend
 } from "recharts";
 import { useSelector } from "react-redux";
 import { selectPerspective } from "../../store/slices/uiSlice";
@@ -26,6 +31,7 @@ import {
     LineChart,
     LayoutDashboard
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import type { YoutubeResult } from "@/features/schemas/youtubeSchema";
 
@@ -72,6 +78,12 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
             { name: "Neutral", value: 10, color: "#9ca3af" },
             { name: "Negative", value: 5, color: "#ef4444" },
         ];
+    } else if (sentiment?.toLowerCase().includes("negative")) {
+        sentimentData = [
+            { name: "Positive", value: 20, color: "#10b981" },
+            { name: "Neutral", value: 20, color: "#9ca3af" },
+            { name: "Negative", value: 60, color: "#ef4444" },
+        ];
     }
 
     const containerVariants = {
@@ -88,7 +100,6 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
     };
 
     const themeColor = isCreator ? "purple" : "blue";
-    const accentColor = isCreator ? "pink" : "cyan";
 
     return (
         <motion.div
@@ -112,6 +123,12 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {model_used && (
+                        <div className="px-3 py-1 rounded-xl bg-slate-800/50 border border-white/5 text-[10px] text-gray-500 font-mono flex flex-col items-center justify-center h-11">
+                            <span className="opacity-50 uppercase tracking-wider">AI Model</span>
+                            <span className="text-gray-300 font-semibold">{model_used}</span>
+                        </div>
+                    )}
                     <Button variant="outline" className="rounded-xl border-white/10 bg-white/5 text-gray-400 hover:text-white h-11 px-6 font-bold text-xs uppercase transition-all">
                         <Download className="w-4 h-4 mr-2" />
                         Export {isCreator ? "Pitch Desk" : "ROI Report"}
@@ -126,7 +143,6 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                     className="lg:col-span-1 space-y-6"
                     variants={itemVariants}
                 >
-                    {/* Video Card */}
                     <div className={`group relative bg-black/40 backdrop-blur-md rounded-[32px] overflow-hidden border border-white/10 shadow-2xl hover:border-${themeColor}-500/50 transition-all duration-500`}>
                         <div className="relative aspect-video overflow-hidden">
                             <img
@@ -136,7 +152,6 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
 
-                            {/* Channel overlay at top left */}
                             <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-4 py-1 border border-white/10">
                                 <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${isCreator ? "from-purple-500 to-pink-500" : "from-blue-500 to-indigo-500"} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
                                     {channel_name?.charAt(0) || "C"}
@@ -165,7 +180,6 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                         </div>
                     </div>
 
-                    {/* Role Specific Side Widget */}
                     {isCreator ? (
                         <div className="bg-gradient-to-b from-purple-900/40 to-slate-900/40 backdrop-blur-xl border border-purple-500/20 rounded-[32px] p-6 shadow-xl relative overflow-hidden group">
                             <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/20 blur-3xl rounded-full" />
@@ -256,14 +270,14 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                             )}
 
                             <div className="relative z-10 h-full flex flex-col">
-                                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6 backdrop-blur-sm shadow-inner ${isSponsored ? "bg-black/20 text-white" : "bg-white/5 text-gray-500 border border-white/5"}`}>
+                                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6 backdrop-blur-sm shadow-inner ${isSponsored ? "bg-black/20 text-white" : "bg-white/5 text-gray-400 border border-white/5"}`}>
                                     <TrendingUp className="w-3 h-3" />
                                     <span className="text-[10px] font-black uppercase tracking-widest">{isSponsored ? "Partner Status" : (isCreator ? "Revenue Potential" : "Sponsor Fit")}</span>
                                 </div>
 
                                 {isSponsored ? (
                                     <>
-                                        <h3 className="text-3xl font-black mb-1 drop-shadow-md uppercase">{sponsorName}</h3>
+                                        <h3 className="text-3xl font-black mb-1 drop-shadow-md uppercase text-white">{sponsorName}</h3>
                                         <p className="text-orange-100 font-bold text-sm uppercase tracking-widest opacity-90 mt-2">{sponsorIndustry} Partner</p>
                                     </>
                                 ) : (
@@ -283,9 +297,54 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                         className="grid grid-cols-1 md:grid-cols-2 gap-6"
                         variants={itemVariants}
                     >
+                        {/* Engagement Chart */}
+                        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 shadow-xl flex flex-col hover:border-indigo-500/20 transition-colors group">
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
+                                        <Activity className="w-5 h-5" />
+                                    </div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-widest">Engagement Radius</h3>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 w-full min-h-[220px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={engagementData} layout="vertical" margin={{ left: 0, right: 30, bottom: 0, top: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                                        <XAxis type="number" hide />
+                                        <YAxis
+                                            dataKey="name"
+                                            type="category"
+                                            stroke="#9ca3af"
+                                            fontSize={10}
+                                            fontWeight={900}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            width={60}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+                                            cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                                        />
+                                        <Bar
+                                            dataKey="value"
+                                            radius={[0, 6, 6, 0]}
+                                            barSize={32}
+                                            animationDuration={1500}
+                                        >
+                                            {engagementData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
                         {/* Sentiment Chart */}
                         <div className="bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 shadow-xl flex flex-col hover:border-emerald-500/20 transition-colors group">
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
                                         <MessageCircle className="w-5 h-5" />
@@ -294,18 +353,18 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                                 </div>
                             </div>
 
-                            <div className="flex-1 w-full relative min-h-[180px] flex items-center justify-center">
-                                <div className="absolute flex flex-col items-center">
-                                    <span className="text-5xl font-black text-white">{sentimentData[0]?.value}%</span>
-                                    <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mt-1">Positive</span>
+                            <div className="flex-1 w-full relative min-h-[220px]">
+                                <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                                    <span className="text-4xl font-black text-white drop-shadow-lg">{sentimentData[0]?.value ?? 0}%</span>
+                                    <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest bg-emerald-400/10 px-2 py-0.5 rounded-full mt-1">Positive</span>
                                 </div>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={sentimentData}
-                                            innerRadius={60}
-                                            outerRadius={75}
-                                            paddingAngle={8}
+                                            innerRadius={65}
+                                            outerRadius={85}
+                                            paddingAngle={6}
                                             dataKey="value"
                                             stroke="none"
                                         >
@@ -313,32 +372,45 @@ const AnalysisDashboard: React.FC<Props> = ({ result }) => {
                                                 <Cell key={`cell-${index}`} fill={entry.color} />
                                             ))}
                                         </Pie>
+                                        <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }} itemStyle={{ color: '#fff' }} />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
-                        </div>
 
-                        {/* Summary Box */}
-                        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 shadow-xl">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className={`p-2 rounded-xl bg-${themeColor}-500/10 text-${themeColor}-400`}>
-                                    <LineChart className="w-5 h-5" />
+                            {/* Legend */}
+                            <div className="flex justify-center gap-6 text-[10px] font-black uppercase tracking-widest mt-2">
+                                <div className="flex items-center gap-2 text-gray-300">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" /> Positive
                                 </div>
-                                <h3 className="text-sm font-black text-white uppercase tracking-widest">{isCreator ? "Performance Summary" : "Campaign Outlook"}</h3>
-                            </div>
-                            <p className="text-gray-400 text-xs leading-relaxed font-medium">
-                                {contentSummary || "AI analysis of performance indicators suggests a steady growth trajectory for this content type."}
-                            </p>
-                            <div className="mt-6 flex flex-wrap gap-2">
-                                {keyTopics.slice(0, 3).map((topic, i) => (
-                                    <span key={i} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase text-gray-400">
-                                        #{topic}
-                                    </span>
-                                ))}
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <div className="w-2 h-2 rounded-full bg-gray-500" /> Neutral
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <div className="w-2 h-2 rounded-full bg-red-500" /> Negative
+                                </div>
                             </div>
                         </div>
                     </motion.div>
 
+                    {/* Summary Box */}
+                    <div className="bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 shadow-xl">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className={`p-2 rounded-xl bg-${themeColor}-500/10 text-${themeColor}-400`}>
+                                <LineChart className="w-5 h-5" />
+                            </div>
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest">{isCreator ? "Performance Summary" : "Campaign Outlook"}</h3>
+                        </div>
+                        <p className="text-gray-400 text-xs leading-relaxed font-medium">
+                            {contentSummary || "AI analysis of performance indicators suggests a steady growth trajectory for this content type."}
+                        </p>
+                        <div className="mt-6 flex flex-wrap gap-2">
+                            {keyTopics.map((topic, i) => (
+                                <span key={i} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase text-gray-400">
+                                    #{topic}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
             </div>

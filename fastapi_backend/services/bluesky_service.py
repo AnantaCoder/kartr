@@ -1,15 +1,9 @@
 import os
-import logging
 from atproto import Client, models
 from fastapi import HTTPException
 import mimetypes
 from PIL import Image
 import io
-import httpx
-import base64
-import re
-
-logger = logging.getLogger(__name__)
 
 class BlueskyService:
     """
@@ -142,72 +136,5 @@ class BlueskyService:
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to post video: {str(e)}")
-
-    async def post_image_url(self, identifier: str, password: str, text: str, image_url: str, alt_text: str = "") -> dict:
-        """Post text with image from URL or Data URI"""
-        client = self._get_client(identifier, password)
-        try:
-            image_bytes = None
-            
-            # Handle Data URI
-            if image_url.startswith('data:image/'):
-                logger.info("Decoding image from Data URI for BlueSky")
-                # Extract base64 part
-                header, encoded = image_url.split(",", 1)
-                image_bytes = base64.b64decode(encoded)
-            else:
-                # Regular URL
-                async with httpx.AsyncClient() as httpx_client:
-                    response = await httpx_client.get(image_url)
-                    response.raise_for_status()
-                    image_bytes = response.content
-            
-            # Compress if needed
-            img = Image.open(io.BytesIO(image_bytes))
-            buffer = io.BytesIO()
-            img.save(buffer, format='JPEG', quality=85, optimize=True)
-            img_data = buffer.getvalue()
-            
-            post = client.send_image(text=text, image=img_data, image_alt=alt_text)
-            return {
-                "success": True,
-                "post_uri": post.uri,
-                "cid": post.cid,
-                "message": "Image post created successfully"
-            }
-        except Exception as e:
-            logger.error(f"BlueSky image post failed: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail=f"Failed to post image: {str(e)}")
-
-    async def post_video_url(self, identifier: str, password: str, text: str, video_url: str, alt_text: str = "Video") -> dict:
-        """Post text with video from URL"""
-        client = self._get_client(identifier, password)
-        try:
-            async with httpx.AsyncClient() as httpx_client:
-                response = await httpx_client.get(video_url)
-                response.raise_for_status()
-                video_data = response.content
-            
-            # Upload blob
-            upload_response = client.upload_blob(video_data)
-            
-            embed_video = models.AppBskyEmbedVideo.Main(
-                video=upload_response.blob,
-                aspect_ratio=models.AppBskyEmbedDefs.AspectRatio(width=16, height=9)
-            )
-            
-            post = client.send_post(
-                text=text,
-                embed=embed_video
-            )
-
-            return {
-                "success": True,
-                "post_uri": post.uri,
-                "cid": post.cid,
-                "message": "Video post from URL created successfully"
-            }
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to post video from URL: {str(e)}")
 
 bluesky_service = BlueskyService()

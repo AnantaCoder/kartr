@@ -18,7 +18,7 @@ def get_all_vis() -> List[dict]:
     # Try Firebase
     repo = get_virtual_influencers_repository()
     if repo:
-        vis = repo.get_all()
+        vis = repo.find_all() # find_all should return the list as per database.py/firebase_config.py
         # Ensure we return a list
         return vis if vis else []
     
