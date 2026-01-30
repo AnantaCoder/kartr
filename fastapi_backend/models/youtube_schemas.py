@@ -43,7 +43,8 @@ class YouTubeStatsResponse(BaseModel):
 
 class AnalyzeVideoRequest(BaseModel):
     """Request to analyze a video for influencer and sponsor information"""
-    video_url: str = Field(..., description="YouTube video URL to analyze")
+    video_url: Optional[str] = Field(None, description="Single YouTube video URL to analyze")
+    video_urls: Optional[List[str]] = Field(default=None, description="Optional list of multiple YouTube video URLs to analyze")
 
 
 class VideoAnalysis(BaseModel):
@@ -56,6 +57,17 @@ class VideoAnalysis(BaseModel):
     sentiment: Optional[str] = Field(None, description="Overall sentiment: Positive, Neutral, or Negative")
     key_topics: Optional[List[str]] = Field(default=[], description="Main topics discussed in the video")
     error: Optional[str] = Field(None, description="Error message if analysis failed")
+
+
+class Recommendation(BaseModel):
+    """A live recommendation from Tavily search"""
+    name: str
+    industry: Optional[str] = None
+    fit_score: int
+    reason: str
+    handle: Optional[str] = None
+    subscribers: Optional[str] = None
+    engagement_rate: Optional[float] = None
 
 
 class AnalyzeVideoResponse(BaseModel):
@@ -72,6 +84,7 @@ class AnalyzeVideoResponse(BaseModel):
     channel_title: Optional[str] = Field(None, description="Channel name")
     tags: Optional[List[str]] = Field(default=[], description="Video tags")
     analysis: Optional[VideoAnalysis] = Field(None, description="AI-generated analysis from Gemini")
+    recommendations: Optional[List[Recommendation]] = Field(default=[], description="Live market recommendations from Tavily")
     gemini_raw_response: Optional[str] = Field(None, description="Raw text response from Gemini AI")
     error: Optional[str] = Field(None, description="Error message if video fetch failed")
 
@@ -101,3 +114,9 @@ class SaveAnalysisRequest(BaseModel):
     creator_name: str
     creator_industry: str
     sponsors: Optional[List[dict]] = None
+class BulkVideoAnalysisResponse(BaseModel):
+    """Response for bulk video analysis"""
+    results: List[AnalyzeVideoResponse]
+    total_count: int
+    success_count: int
+    failed_count: int

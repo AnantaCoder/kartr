@@ -10,6 +10,7 @@ The schemas have been organized into separate files:
 - image_schemas.py: Image generation schemas
 - common_schemas.py: Common/utility schemas
 - chat_schemas.py: AI chat schemas
+- ad_studio_schemas.py: Ad Studio schemas
 """
 
 # Re-export all schemas for backward compatibility
@@ -21,6 +22,7 @@ from .auth_schemas import (
     ForgotPasswordRequest,
     OTPVerifyRequest,
     GoogleLoginRequest,
+    UserProfileUpdate,
 )
 
 from .youtube_schemas import (
@@ -34,6 +36,7 @@ from .youtube_schemas import (
     AnalyzeChannelRequest,
     YouTubeChannelResponse,
     SaveAnalysisRequest,
+    BulkVideoAnalysisResponse,
 )
 
 from .search_schemas import (
@@ -79,6 +82,12 @@ from .chat_schemas import (
     DeleteConversationResponse,
 )
 
+from .ad_studio_schemas import (
+    AdGenerationRequest,
+    AdGenerationResponse,
+    AdPostRequest,
+)
+
 # Export all for wildcard imports
 __all__ = [
     # Auth
@@ -89,6 +98,7 @@ __all__ = [
     "ForgotPasswordRequest",
     "OTPVerifyRequest",
     "GoogleLoginRequest",
+    "UserProfileUpdate",
     # YouTube
     "YouTubeStatsRequest",
     "YouTubeStatsResponse",
@@ -100,6 +110,7 @@ __all__ = [
     "AnalyzeChannelRequest",
     "YouTubeChannelResponse",
     "SaveAnalysisRequest",
+    "BulkVideoAnalysisResponse",
     # Search
     "SearchRequest",
     "SearchResponse",
@@ -133,4 +144,8 @@ __all__ = [
     "MessagesListResponse",
     "UpdateConversationTitleRequest",
     "DeleteConversationResponse",
+    # Ad Studio
+    "AdGenerationRequest",
+    "AdGenerationResponse",
+    "AdPostRequest",
 ]

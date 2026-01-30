@@ -117,9 +117,39 @@ dmypy.json
 # Data files that shouldn't be versioned
 fastapi_backend/data/*.json
 fastapi_backend/data/*.csv
+<<<<<<< HEAD
+fastapi_backend/data/outputs/**
 !fastapi_backend/data/.gitkeep
 
+# Testing / Verification scripts
+fastapi_backend/verify_*.py
+fastapi_backend/scripts/
+
+# Video outputs
+*.mp4
+*.webm
+
+=======
+!fastapi_backend/data/.gitkeep
+
+>>>>>>> upstream/main
 # Temporary files
 tmp/
 temp/
 *.tmp
+
+# =============================================================================
+# Media & Uploads
+# =============================================================================
+uploads/
+data/videos/
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.png
+*.jpg
+*.jpeg
+*.gif
+

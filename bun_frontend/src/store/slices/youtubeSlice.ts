@@ -44,7 +44,7 @@ interface AnalyzeVideoResponse {
 
 // Transform backend response to frontend YoutubeResult format
 const transformResponse = (data: AnalyzeVideoResponse): YoutubeResult => {
-  const sponsors = data.analysis?.sponsor_name 
+  const sponsors = data.analysis?.sponsor_name
     ? [{ name: data.analysis.sponsor_name, industry: data.analysis.sponsor_industry }]
     : []
 
@@ -75,32 +75,87 @@ const transformResponse = (data: AnalyzeVideoResponse): YoutubeResult => {
 
 
 
+// Bulk response type
+interface AnalyzeBulkResponse {
+  results: AnalyzeVideoResponse[]
+  total_count: number
+  success_count: number
+  failed_count: number
+}
+
 export const fetchYoutubeResults = createAsyncThunk<
   YoutubeResult[],
-  string
->("youtube/fetchResults", async (videoUrl, thunkAPI) => {
+  string | string[]
+>("youtube/fetchResults", async (input, thunkAPI) => {
   try {
-    // Use apiClient which has baseURL and auth token injection
+    const isBulk = Array.isArray(input) || (typeof input === "string" && (input.includes(",") || input.includes("\n")));
+
+    if (isBulk) {
+      const urls = Array.isArray(input)
+        ? input
+        : input.split(/[,\n]/).map(u => u.trim()).filter(u => u.length > 0);
+
+      const res = await apiClient.post<AnalyzeBulkResponse>(
+        "/youtube/analyze-bulk",
+        { video_urls: urls }
+      );
+
+      // Transform all results
+      return res.data.results.map(transformResponse);
+    } else {
+      // Use apiClient which has baseURL and auth token injection
+      const res = await apiClient.post<AnalyzeVideoResponse>(
+        "/youtube/analyze-video",
+        { video_url: input }
+      );
+
+      // Check for error in response
+      if (res.data.error) {
+        return thunkAPI.rejectWithValue(res.data.error);
+      }
+
+      // Transform and return as array
+      const result = transformResponse(res.data);
+      return [result];
+    }
+  } catch (error: any) {
+    // Handle different error types
+    const errorMessage =
+      error.response?.data?.detail ||
+      error.response?.data?.error ||
+      error.message ||
+      "Failed to analyze video";
+    return thunkAPI.rejectWithValue(errorMessage);
+  }
+});
+
+export const analyzeVideoFile = createAsyncThunk<
+  YoutubeResult[],
+  FormData
+>("youtube/analyzeFile", async (formData, thunkAPI) => {
+  try {
     const res = await apiClient.post<AnalyzeVideoResponse>(
-      "/youtube/analyze-video",
-      { video_url: videoUrl }
+      "/youtube/analyze-video-file",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
 
-    // Check for error in response
     if (res.data.error) {
       return thunkAPI.rejectWithValue(res.data.error);
     }
 
-    // Transform and return as array
     const result = transformResponse(res.data);
     return [result];
   } catch (error: any) {
-    // Handle different error types
-    const errorMessage = 
-      error.response?.data?.detail || 
+    const errorMessage =
+      error.response?.data?.detail ||
       error.response?.data?.error ||
       error.message ||
-      "Failed to analyze video";
+      "Failed to analyze video file";
     return thunkAPI.rejectWithValue(errorMessage);
   }
 });
@@ -129,6 +184,18 @@ const youtubeSlice = createSlice({
       .addCase(fetchYoutubeResults.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload as string || "Failed to fetch results"
+      })
+      .addCase(analyzeVideoFile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(analyzeVideoFile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.results = action.payload;
+      })
+      .addCase(analyzeVideoFile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || "Failed to analyze file";
       })
   }
 })

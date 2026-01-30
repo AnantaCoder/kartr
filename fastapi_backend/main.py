@@ -1,4 +1,5 @@
 """
+# Force reload trigger - fix email argument name
 Kartr FastAPI Backend - Main Application Entry Point
 
 This is the main FastAPI application that serves as the backend for the Kartr
@@ -18,9 +19,14 @@ import sys
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 # Load environment variables
+
+# Environment variables loaded successfully
+import sys
+print(f"DEBUG: sys.path = {sys.path}")
 load_dotenv()
 
 # Import routers
@@ -34,6 +40,13 @@ from routers.visualization import router as visualization_router
 from routers.utilities import router as utilities_router
 from routers.chat import router as chat_router
 from routers.bluesky import router as bluesky_router
+from routers.video_script import router as video_script_router
+from routers.ad_studio import router as ad_studio_router
+from routers.video import router as video_router, local_router as local_video_router
+from routers.influencer import router as influencer_router
+from routers.admin import router as admin_router
+from routers.campaign import router as campaign_router
+from routers.tracking import router as tracking_router
 
 # Configure logging
 logging.basicConfig(
@@ -87,6 +100,14 @@ app.include_router(visualization_router)
 app.include_router(utilities_router)
 app.include_router(chat_router)
 app.include_router(bluesky_router)
+app.include_router(video_script_router)
+app.include_router(ad_studio_router)
+app.include_router(video_router)
+app.include_router(local_video_router)
+app.include_router(influencer_router)
+app.include_router(admin_router)
+app.include_router(campaign_router)
+app.include_router(tracking_router)
 
 
 @app.get("/")
@@ -101,17 +122,38 @@ async def root():
     }
 
 
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler"""
+    
+    # If it's a known HTTP exception, let it pass through (or handle gracefully)
+    if isinstance(exc, StarletteHTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+        
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
+    print(f"CRITICAL ERROR: {exc}") # Force output to console
+    response = JSONResponse(
         status_code=500,
         content={
             "error": "Internal server error",
             "detail": str(exc) if os.getenv("DEBUG", "false").lower() == "true" else "An error occurred"
         }
     )
+    
+    # Manually add CORS headers since global exception handler might bypass middleware in some cases
+    origin = request.headers.get("origin")
+    if origin and (origin in ALLOWED_ORIGINS or "*" in ALLOWED_ORIGINS):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        
+    return response
 
 
 @app.on_event("startup")
@@ -131,6 +173,12 @@ async def startup_event():
         logger.warning("YouTube API key not configured. Some features will be limited.")
 
 
+# Static Files for Generated Output
+VIDEO_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'data', 'outputs', 'videos')
+os.makedirs(VIDEO_OUTPUT_DIR, exist_ok=True)
+app.mount("/data/outputs/videos", StaticFiles(directory=VIDEO_OUTPUT_DIR), name="videos")
+
+
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown event"""
@@ -147,3 +195,8 @@ if __name__ == "__main__":
         reload=True,
         log_level="debug"
     )
+ 
+ 
+ 
+ 
+ 

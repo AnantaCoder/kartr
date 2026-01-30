@@ -322,19 +322,70 @@ class YouTubeService:
             )
             response = request.execute()
             
-            videos = []
-            for item in response.get('items', []):
-                snippet = item.get('snippet', {})
-                video_id = item.get('id', {}).get('videoId', '')
+            # Get video IDs
+            video_ids = []
+            search_items = response.get('items', [])
+            for item in search_items:
+                vid = item.get('id', {}).get('videoId', '')
+                if vid:
+                    video_ids.append(vid)
+            
+            if not video_ids:
+                return []
                 
-                if video_id:
-                    videos.append({
-                        "video_id": video_id,
-                        "title": snippet.get('title', ''),
-                        "description": (snippet.get('description', '') or '')[:200],
-                        "published_at": snippet.get('publishedAt', ''),
-                        "thumbnail_url": snippet.get('thumbnails', {}).get('medium', {}).get('url', ''),
-                    })
+            # Batch fetch video stats
+            stats_request = self.client.videos().list(
+                part="snippet,statistics",
+                id=",".join(video_ids)
+            )
+            stats_response = stats_request.execute()
+            
+            videos = []
+            for item in stats_response.get('items', []):
+                snippet = item.get('snippet', {})
+                stats = item.get('statistics', {})
+                desc = snippet.get('description', '') or ''
+                
+                # Basic Sponsor Detection (Keyword based)
+                is_sponsored = False
+                sponsor_name = None
+                
+                lower_desc = desc.lower()
+                sponsor_keywords = ['sponsored by', 'partnered with', 'thanks to', 'brought to you by']
+                
+                for keyword in sponsor_keywords:
+                    if keyword in lower_desc:
+                        is_sponsored = True
+                        # Try to extract name (simple heuristic)
+                        try:
+                            parts = lower_desc.split(keyword)
+                            if len(parts) > 1:
+                                # Get first few words after keyword
+                                candidate = parts[1].strip().split('\n')[0]
+                                # Clean up punctuation
+                                candidate = candidate.strip('.:,!- ')
+                                # Take first 3-4 words max
+                                words = candidate.split()
+                                sponsor_name = " ".join(words[:3]).title()
+                        except:
+                            sponsor_name = "Unknown Sponsor"
+                        break
+                
+                videos.append({
+                    "video_id": item['id'],
+                    "title": snippet.get('title', ''),
+                    "description": desc[:200],
+                    "published_at": snippet.get('publishedAt', ''),
+                    "thumbnail_url": snippet.get('thumbnails', {}).get('medium', {}).get('url', ''),
+                    "view_count": self._safe_int(stats.get('viewCount')),
+                    "like_count": self._safe_int(stats.get('likeCount')),
+                    "comment_count": self._safe_int(stats.get('commentCount')),
+                    "is_sponsored": is_sponsored,
+                    "sponsor_name": sponsor_name
+                })
+            
+            # Sort by date (search results are date ordered, but batch fetch might lose it)
+            videos.sort(key=lambda x: x['published_at'], reverse=True)
             
             return videos
             
@@ -430,12 +481,54 @@ class YouTubeService:
             if channels_repo:
                 return channels_repo.find_by_field("user_id", str(user_id))
             
+            # Fallback to mock database
             mock_db = get_mock_db()
-            return mock_db.get_channels_by_user(user_id)
+            return mock_db.get_user_youtube_channels(user_id)
             
         except Exception as e:
             logger.error(f"Error getting user channels: {e}")
             return []
+
+    def remove_channel(self, user_id, channel_id: str) -> bool:
+        """
+        Remove a YouTube channel for a user.
+        
+        Args:
+            user_id: User ID
+            channel_id: Channel ID to remove
+            
+        Returns:
+            True if removed successfully, False otherwise
+        """
+        try:
+            channels_repo = get_youtube_channels_repository()
+            
+            if channels_repo:
+                # Find channel belonging to this user
+                existing = channels_repo.find_by_field("channel_id", channel_id)
+                user_channel = next(
+                    (ch for ch in existing if str(ch.get("user_id")) == str(user_id)),
+                    None
+                )
+                
+                if user_channel:
+                    return channels_repo.delete(user_channel["id"])
+                return False
+            
+            # Fallback to mock database (needs implementation in mock DB if supported)
+            # For now, just return True to simulate success in mock mode
+            # In a real mock implementation, we would modify the in-memory list
+            mock_db = get_mock_db()
+            # Assuming mock_db might have a remove method or we just simulate it
+            if hasattr(mock_db, 'delete_youtube_channel'):
+                return mock_db.delete_youtube_channel(user_id, channel_id)
+            
+            # Fallback simulation for mock
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error removing channel: {e}")
+            return False
     
     def save_search(self, user_id, search_term: str, video_id: Optional[str] = None) -> bool:
         """

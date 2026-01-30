@@ -290,7 +290,7 @@ async def send_message(
             detail="Conversation not found"
         )
     
-    success, response_data, error = ChatService.send_message_and_get_response(
+    success, response_data, error = await ChatService.send_message_and_get_response(
         conversation_id=conversation_id,
         user_id=str(current_user["id"]),
         user_message=request.message
@@ -343,7 +343,7 @@ async def quick_chat(
         )
     
     # Send message and get response
-    success, response_data, error = ChatService.send_message_and_get_response(
+    success, response_data, error = await ChatService.send_message_and_get_response(
         conversation_id=conversation["id"],
         user_id=str(current_user["id"]),
         user_message=request.message

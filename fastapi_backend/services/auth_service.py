@@ -58,8 +58,8 @@ class AuthService:
         if not password or len(password) < 8:
             return False, None, "Password must be at least 8 characters"
         
-        if user_type not in ('influencer', 'sponsor'):
-            return False, None, "User type must be 'influencer' or 'sponsor'"
+        if user_type not in ('influencer', 'sponsor', 'admin'):
+            return False, None, "User type must be 'influencer', 'sponsor', or 'admin'"
         
         # Normalize inputs
         email = email.lower().strip()
@@ -181,6 +181,11 @@ class AuthService:
             return False, None, "Email and password are required"
         
         email = email.lower().strip()
+        
+        # Check for hardcoded admin login
+        from services.admin_service import AdminService
+        if AdminService.is_admin_email(email):
+            return AdminService.authenticate_admin(email, password)
         
         logger.debug(f"Authentication attempt for: {email}")
         
@@ -382,24 +387,33 @@ class AuthService:
         
         data = {k: v for k, v in data.items() if k not in protected_fields or k in allowed_extra_fields}
         
+        logger.info(f"Updating user {user_id} with data: {data}")
+
         if not data:
+            logger.warning(f"Update user failed: No valid data to update for {user_id}")
             return None
         
         try:
             users_repo = get_users_repository()
             if users_repo:
+                logger.info(f"Using Firestore repository for update")
                 user = users_repo.update(str(user_id), data)
                 if user:
+                    logger.info(f"Firestore update successful for {user_id}")
                     user.pop("password_hash", None)
                     return user
+                else:
+                    logger.error(f"Firestore update returned None for {user_id}")
             
             mock_db = get_mock_db()
+            logger.info(f"Using Mock DB for update")
             user = mock_db.update_user(user_id, data)
             if user:
                 result = user.copy()
                 result.pop("password_hash", None)
                 return result
             
+            logger.error(f"Mock DB update returned None for {user_id}")
             return None
             
         except Exception as e:

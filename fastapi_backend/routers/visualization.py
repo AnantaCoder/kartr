@@ -14,6 +14,7 @@ from typing import Dict, Any, List
 # Third-party imports
 import pandas as pd
 import google.generativeai as genai
+import httpx
 from fastapi import APIRouter, Depends
 
 # Local imports
@@ -22,6 +23,7 @@ from database import is_firebase_configured
 from firebase_config import FirestoreRepository
 from models.schemas import GraphData, QuestionRequest, QuestionResponse
 from utils.dependencies import get_current_user
+from services.graph_service import graph_service
 
 
 # =============================================================================
@@ -192,59 +194,7 @@ def load_industry_graph() -> Dict[str, Any]:
 # Helper Functions - RAG Context Building
 # =============================================================================
 
-def _get_rag_context_from_firebase(keywords: List[str]) -> str:
-    """
-    Retrieve relevant context from Firebase for RAG.
-    
-    Args:
-        keywords: List of keywords to filter by
-        
-    Returns:
-        Formatted context string
-    """
-    analyses_repo = FirestoreRepository('video_analyses')
-    analyses = analyses_repo.find_all(limit=MAX_RAG_RECORDS)
-    
-    relevant = []
-    for row in analyses:
-        row_str = str(row).lower()
-        if any(kw in row_str for kw in keywords):
-            relevant.append(row)
-            if len(relevant) >= MAX_RAG_RESULTS:
-                break
-    
-    if not relevant:
-        return "No data available."
-    
-    return "\n".join([
-        f"Creator: {r.get('creator_name')}, Industry: {r.get('creator_industry')}, "
-        f"Sponsor: {r.get('sponsor_name')}, Sponsor Industry: {r.get('sponsor_industry')}, "
-        f"Video: {r.get('video_title')}"
-        for r in relevant
-    ])
-
-
-def _get_rag_context_from_csv(keywords: List[str]) -> str:
-    """
-    Retrieve relevant context from CSV for RAG (fallback).
-    
-    Args:
-        keywords: List of keywords to filter by
-        
-    Returns:
-        Formatted context string
-    """
-    if not os.path.exists(CSV_PATH):
-        return "No data available."
-    
-    df = pd.read_csv(CSV_PATH)
-    mask = df.apply(lambda row: any(kw in str(row).lower() for kw in keywords), axis=1)
-    relevant_df = df[mask].head(MAX_RAG_RESULTS)
-    
-    if relevant_df.empty:
-        return "No data available."
-    
-    return relevant_df.to_string(index=False)
+# Note: RAG Logic has been moved to services/rag_service.py for centralized use.
 
 
 # =============================================================================
@@ -293,14 +243,14 @@ async def ask_question(
         genai.configure(api_key=settings.GEMINI_API_KEY)
         keywords = request.question.lower().split()
         
-        # Get context from Firebase or CSV
-        if is_firebase_configured():
-            context = _get_rag_context_from_firebase(keywords)
-        else:
-            context = _get_rag_context_from_csv(keywords)
+        from services.rag_service import RagService
+        context = RagService.get_context(keywords)
         
-        # Generate answer using Gemini
-        model = genai.GenerativeModel(settings.GEMINI_TEXT_MODEL)
+        # Generate answer using Gemini 1.5
+        model = genai.GenerativeModel(
+            model_name=settings.GEMINI_TEXT_MODEL,
+            system_instruction="You are a data analyst for Kartr. Use the provided context to answer questions accurately and concisely."
+        )
         prompt = f"""Based on the following data about creators and sponsors:
 
 {context}
@@ -309,9 +259,16 @@ Answer this question: {request.question}
 
 Provide a helpful and concise answer based only on the data provided."""
         
-        response = model.generate_content(prompt)
-        answer = response.text if response.text else "Could not generate an answer."
+        try:
+            response = model.generate_content(prompt)
+            answer = response.text if response.text else None
+        except Exception as gem_err:
+            logger.warning(f"Gemini failed, falling back to Groq: {gem_err}")
+            answer = None
         
+        if not answer:
+            answer = await _ask_groq(prompt)
+            
         return QuestionResponse(answer=answer)
         
     except ImportError:
@@ -321,19 +278,68 @@ Provide a helpful and concise answer based only on the data provided."""
         return QuestionResponse(answer=f"Error processing question: {str(e)}")
 
 
+async def _ask_groq(prompt: str, system_instruction: str = "You are a helpful data analyst for Kartr.") -> str:
+    """Helper to call Groq API"""
+    if not settings.GROQ_API_KEY:
+        return "Groq API key not configured."
+    
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": settings.GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.3,
+        "max_tokens": 1024
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            return data['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        logger.error(f"Groq API Error: {e}")
+        return f"Error connecting to Groq: {str(e)}"
+
+
 @router.post("/questions/ask-graph", response_model=QuestionResponse)
 async def ask_graph_question(
     request: QuestionRequest,
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Answer questions about graph data.
-    
-    (Coming soon - will analyze graph structure to answer questions)
+    Answer questions about graph data using Graph-Augmented Retrieval.
     """
-    return QuestionResponse(
-        answer=f"Graph Q&A: You asked about '{request.question}'. This feature is coming soon."
-    )
+    try:
+        # 1. Get Structural Topology Context
+        graph_context = graph_service.get_structural_context()
+        
+        # 2. Build Prompt
+        prompt = f"""STRUCTURAL TOPOLOGY DATA:
+{graph_context}
+
+USER QUESTION: {request.question}
+
+Please analyze the influence and connections provided in the topology to answer the user's question. If you cannot find a direct answer, explain what the graph shows about the entities mentioned."""
+
+        # 3. Use Groq for faster/more reliable structural analysis
+        answer = await _ask_groq(
+            prompt=prompt,
+            system_instruction="You are a Graph Data Analyst for Kartr. Use the provided network topology metrics (Degree Centrality, influence rankings) to answer questions specifically about the ecosystem's structure and connectivity."
+        )
+        
+        return QuestionResponse(answer=answer)
+        
+    except Exception as e:
+        logger.error(f"Graph Q&A Error: {e}")
+        return QuestionResponse(answer=f"Error analyzing graph: {str(e)}")
 
 
 # =============================================================================

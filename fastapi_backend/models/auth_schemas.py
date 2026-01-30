@@ -11,7 +11,7 @@ class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=64)
     email: EmailStr
     password: str = Field(..., min_length=8)
-    user_type: str = Field(..., pattern="^(influencer|sponsor)$")
+    user_type: str = Field(..., pattern="^(influencer|sponsor|admin)$")
     full_name: Optional[str] = Field(default="", max_length=128)
 
 
@@ -31,6 +31,8 @@ class UserResponse(BaseModel):
     date_registered: Union[datetime, str]  # Accept both datetime and ISO string
     email_visible: bool = False
     bluesky_handle: Optional[str] = None
+    keywords: Optional[list[str]] = []
+    niche: Optional[str] = None
     # Never return bluesky_password
 
     class Config:
@@ -59,3 +61,12 @@ class GoogleLoginRequest(BaseModel):
     """Schema for Google Login using Firebase ID token"""
     id_token: str
     user_type: Optional[str] = "influencer"  # Default to influencer if not specified
+
+
+class UserProfileUpdate(BaseModel):
+    """Schema for updating user profile"""
+    full_name: Optional[str] = None
+    keywords: Optional[list[str]] = None
+    # niche is read-only, updated via analysis
+    email_visible: Optional[bool] = None
+

@@ -1,0 +1,65 @@
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.pytest_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+data/
+bun.lock
+package-lock.json
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.webm
+**/data/
+
+# Executables and binaries
+*.exe
+*.dll
+*.dylib
+*.so.*
+
+# Firebase admin SDK (contains sensitive credentials)
+*firebase-adminsdk*.json
+kartr-firebase-adminsdkjson.json
+
+# Python virtual environments
+**/venv/
+**/.venv/
+**/env/
+
+# Build artifacts
+**/dist/
+**/build/
+
+# Large and redundant files
+*.patch
+*- Copy.*
+*- Copy (2).*
+*.tmp
+temp/

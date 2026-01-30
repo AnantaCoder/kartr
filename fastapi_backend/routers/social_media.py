@@ -79,15 +79,25 @@ async def post_to_bluesky(
                 success=False,
                 message="Bluesky credentials not configured"
             )
+            
+        from atproto import Client
         
-        # For now, return a placeholder response
-        # In production, integrate with Bluesky AT Protocol
+        client = Client()
+        client.login(settings.BLUESKY_HANDLE, settings.BLUESKY_PASSWORD)
+        
+        post = client.send_post(text=request.content)
+        
         return BlueskyPostResponse(
             success=True,
-            message="Bluesky posting feature coming soon",
-            post_uri=None
+            message="Successfully posted to Bluesky",
+            post_uri=post.uri
         )
             
+    except ImportError:
+        return BlueskyPostResponse(
+            success=False,
+            message="atproto library not installed"
+        )
     except Exception as e:
         logger.error(f"Bluesky post error: {e}")
         return BlueskyPostResponse(

@@ -38,14 +38,20 @@ class Settings(BaseSettings):
     
     # Gemini API
     GEMINI_API_KEY: str = ""
-    GEMINI_TEXT_MODEL: str = "gemini-2.5-flash"  # For text generation, analysis, Q&A
-    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash-lite"  # For chat conversations
-    GEMINI_IMAGE_MODEL: str = "gemini-2.0-flash-exp-image-generation"  # For image generation
+    GEMINI_TEXT_MODEL: str = "gemini-2.0-flash"  # For text generation, analysis, Q&A
+    GEMINI_CHAT_MODEL: str = "gemini-2.0-flash"  # For chat conversations
+    GEMINI_IMAGE_MODEL: str = "gemini-2.0-flash"  # For image generation
     
     # Grok API (xAI) - Fallback
     GROK_API_KEY: str = ""
     GROK_MODEL: str = "grok-2-latest"
 
+    # Groq API (Fallback - Secondary)
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama3-70b-8192"
+
+    # Tavily Search API
+    TAVILY_API_KEY: str = ""
     
     # Email/SMTP settings
     EMAIL_USER: str = ""
@@ -57,6 +63,14 @@ class Settings(BaseSettings):
     # Bluesky settings
     BLUESKY_HANDLE: str = ""
     BLUESKY_PASSWORD: str = ""
+    
+    # Cloudinary settings
+    CLOUDINARY_CLOUD_NAME: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_API_KEY: str = os.getenv("CLOUDINARY_API_KEY", "")
+    CLOUDINARY_API_SECRET: str = os.getenv("CLOUDINARY_API_SECRET", "")
+    
+    # Resend Settings
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
     
     class Config:
         env_file = ".env"

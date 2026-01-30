@@ -21,7 +21,10 @@ except ImportError:
     firebase_admin = None
     firestore = None
     firebase_auth = None
-    logger.warning("Firebase Admin SDK not installed. Install with: pip install firebase-admin")
+    logger.warning("Firebase Admin SDK not installed or disabled. Using mock database only.")
+
+# FORCE DISABLE FIREBASE FOR TESTING IF NEEDED
+# FIREBASE_AVAILABLE = False
 
 
 # Module-level state for singleton pattern

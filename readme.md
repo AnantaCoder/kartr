@@ -1,121 +1,127 @@
-# KARTR: Revolutionizing Influencer & Sponsor Marketing Through AI-Driven Automation
+# 🚀 Kartr: AI-Powered Influencer-Sponsor Nexus
 
-## Vision
-Kartr is built on a vision to create a smart and user-friendly SaaS AI platform that brings influencers and sponsors together. It offers a simple online service that helps both parties connect, collaborate, and grow their presence more effectively. Kartr takes care of everything from analyzing which partnerships work best to helping create engaging content and sharing it with the right audience.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Bun](https://img.shields.io/badge/Bun-%23000000.svg?style=flat&logo=bun&logoColor=white)](https://bun.sh/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-## The Problems
-KARTR's AI-driven approach tackles these core challenges head-on:
-
-*   **Manual Data Analysis**: This is time-consuming, error-prone YouTube processing.
-*   **Inefficient Matching**: This involves a lack of systematic influencer-brand identification.
-*   **Content Bottlenecks**: Creating engaging promotional content is resource-heavy.
-*   **Irregular Distribution**: Manual posting leads to inconsistent audience engagement.
-
-## Our Innovative Solution (Features)
-Kartr offers a comprehensive solution to these challenges:
-
-*   **AI Analysis**: Automates extraction of key information from YouTube transcripts.
-*   **Correlation Mapping**: Visualizes influencer-sponsor collaborations with bipartite graphs.
-*   **Virtual Influencers**: Create avatars aligned with brand identity via FOOOCUS.
-*   **Automated Posting**: Schedules content on platforms like BlueSky for consistency.
-
-## Competitive Analysis Summary
-Kartr's competitive advantage includes features like Bipartite Graph Mapping and a focus on **Influencers + Sponsors** as its target users.
-
-| Feature | Kartr | CreatorIQ | Aspire | Upfluence | Tagger |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **AI Content Creation** | ✔ | ✖ | ✖ | ✖ | ✖ |
-| **Virtual Influencer Gen** | ✔ | ✖ | Yes | ✖ | ✖ |
-| **Automated Posting** | ✔ | ✖ | ✖ | ✖ | ✖ |
-| **Transcript + Engagement Graph Mapping** | Bipartite Graphs | High (to BlueSky) | Medium (enterprise) | Basic metrics Medium | Analytics |
-| **Target Users** | Influencers + Sponsors | Enterprise Brands/Agencies | SMBs, DTC Brands | SMBS, M-size Companies Agencies & Enterprises | Agencies & Enterprises |
-
-## Market Opportunity
-The market for influencer and sponsorship marketing is booming:
-
-*   **Influencer Marketing**: The market size was \$21.1B in 2023, and is projected to be +\$22.2B by 2025.
-*   **Social Media Ad Spend**: This is surging, at \$207.1B in 2023, a +60% increase from \$132.0B in 2020.
-*   **Sponsorship Market**: The market is expanding, with Sports sponsorship projected to reach \$89.8B by 2030.
-
-## Business Model & Pricing
-
-### Flexible Pricing for Every Creator and Brand
-| User Type | Plan | Price | Features |
-| :--- | :--- | :--- | :--- |
-| **Influencers** | Starter (Free) | Free | 3 video analyses, basic insights. |
-| **Influencers** | Pro | \$19/month | 15 analyses, full dashboard, 3 auto-posts. |
-| **Influencers** | Creator+ | \$49/month | Unlimited analysis and automation. |
-| **Sponsors/Brands** | Brand Lite | \$99/month | 30 video analyses, 5 product integrations. |
-| **Sponsors/Brands** | Growth | \$249/month | 100+ scans, AI matchmaking. |
-| **Sponsors/Brands** | Enterprise | Custom | Tailored integrations, dedicated support. |
-
-### Diverse Monetization
-
-*   **Subscription Revenue**: Our primary income stream comes from tiered subscriptions for influencers and brands. This provides predictable, recurring revenue.
-*   **Premium AI Generation Packs**: Additional revenue is generated through premium AI content generation. Users can purchase extra credits for advanced features.
-*   **API & White-Label Licenses**: We offer custom API access and white-label solutions for agencies. This expands our reach into enterprise partnerships.
-
-## Go-To-Market Strategy
-
-*   **Target Customers**: Micro, macro, and virtual influencers. Also, brands seeking effective partnerships.
-*   **Market Segments**: Influencer Marketing SaaS, Social Media Automation, Virtual Creator Tools, and SMB advertisers.
-*   **Positioning**: "Kartr: The all-in-one AI platform for automating influencer partnerships".
-
-## Future Roadmap
-We are committed to continuous innovation and expanding KARTR's capabilities:
-
-*   **Expand Social Media**: Add more platforms for wider reach.
-*   **Advanced Analytics**: Develop performance and ROI tracking tools.
-*   **Automated Video**: Introduce AI-generated promotional videos.
-*   **AI Communication**: Automate brand inquiries and strategic advice.
-
-## Tech Stack
-
-| Layer | Technologies |
-|-------|--------------|
-| **Backend** | FastAPI (Python), Firebase Admin SDK |
-| **Database** | Firebase Firestore |
-| **Authentication** | Firebase Auth (Email/Password + Google OAuth), JWT |
-| **AI/ML** | Google Gemini API (gemini-2.5-flash, gemini-2.5-flash-lite) |
-| **Image Generation** | Gemini (gemini-2.0-flash-exp-image-generation) |
-| **APIs** | YouTube Data API v3 |
-| **Email** | SMTP (Gmail) |
+**Kartr** is a next-generation SaaS platform that automates the bridge between content creators and brand sponsors. Leveraging high-frequency AI analysis and relationship mapping, Kartr eliminates the manual bottlenecks of influencer marketing.
 
 ---
 
-## What Kartr Does (At a Glance)
+## 🏗️ System Architecture & Tech Stack
 
-**Kartr is an Influencer-Sponsor Matching Platform** that uses AI to connect brands with the right content creators.
+Kartr is built on a high-performance asynchronous architecture designed for scale and real-time intelligence.
 
-### For Sponsors/Brands:
-- 🔍 **Find influencers** by niche and industry
-- 📊 **Analyze creator content** and detect sponsorships
-- 📈 **View relationship graphs** (who works with whom)
+### 🌐 Frontend (The Experience)
+- **Runtime**: [Bun](https://bun.sh/) — The ultra-fast JavaScript runtime.
+- **Framework**: [React 19](https://react.dev/) — Latest concurrent rendering features.
+- **Styling**: [Tailwind CSS 4.0](https://tailwindcss.com/) — Next-gen utility-first CSS.
+- **Components**: [shadcn/ui](https://ui.shadcn.com/) — Radix-based premium accessible components.
+- **State**: [Redux Toolkit](https://redux-toolkit.js.org/) — Predictable global state management.
+- **Motion**: [Framer Motion](https://www.framer.com/motion/) — Advanced micro-interactions and animations.
+- **Visuals**: [Recharts](https://recharts.org/) — Composable charting library for analytics.
 
-### For Influencers:
-- 📺 **Track channel analytics** via YouTube integration
-- 💡 **Get AI-powered insights** on your content
-- 🤝 **Discover sponsorship opportunities**
+### ⚙️ Backend (The Intelligent Core)
+- **Framework**: [FastAPI](https://fastapi.tiangolo.com/) — High-performance Python async framework.
+- **Validation**: [Pydantic v2](https://docs.pydantic.dev/) — Type-safe data modeling.
+- **Processing**: [Pandas](https://pandas.pydata.org/) & [NetworkX](https://networkx.org/) — Data manipulation and relationship graph mapping.
+- **APIs**: [httpx](https://www.python-httpx.org/) — Asynchronous HTTP requests for service orchestration.
 
-### Core Features:
-| Feature | Description |
-|---------|-------------|
-| **YouTube Analysis** | Paste any video → Get stats + AI sponsor detection |
-| **AI Chat Assistant** | Ask questions about marketing strategies |
-| **Relationship Graphs** | Visualize creator-sponsor connections |
-| **Image Generation** | Create promotional content with AI |
-| **Virtual Influencers** | (Coming soon) Rent AI-powered avatars |
+### 🧠 Intelligence & Infrastructure
+- **AI Models**: Google Gemini 1.5 (Pro/Flash), Groq (Llama 3.3 70B), OpenAI/Grok (Fallback).
+- **Database/Auth**: [Firebase](https://firebase.google.com/) — Real-time NoSQL and production-grade Auth.
+- **Media**: [Cloudinary](https://cloudinary.com/) — Edge-optimized image/video management.
+- **Social**: [atproto](https://atproto.com/) — Direct integration with the Bluesky decentralized network.
+- **Data Source**: [YouTube Data API v3](https://developers.google.com/youtube/v3).
 
 ---
 
-## The Team
-*   **Kiran Chawan**: Founder and CEO of Datatukey, Kartr
-*   **Anirban Sarkar**: AI/ML Engineer
+## ✨ Core Features
 
+| Feature | Impact |
+| :--- | :--- |
+| **Bulk AI Analysis** | Scan multiple YouTube URLs simultaneously for sponsor detection and niche extraction. |
+| **Relationship Mapping** | Bipartite graphs visualizing creator-brand networks with Fit Scores. |
+| **Ad Studio** | Instant AI-generated ad creatives and cross-platform posting (Bluesky). |
+| **Sponsor Dashboard** | Real-time ROI tracking, active creator metrics, and detailed campaign spent analysis. |
+| **Virtual Influencers** | AI-generated creator personas for brand-safe promotional campaigns. |
 
-## Contact Us
-*   **Address**: Proworks 235, Binnamangala, 2nd floor, 13th cross road, 2nd stage, Indira Nagar, Bengaluru- 560038
-*   **Email**: kiransc55@gmail.com
-*   **Phone**: +918660682508
-*   **Website**: [Visit Here](172)
-*   **Demo Video**: [Visit Here](173) 
+---
+
+## 📁 Project Structure
+
+```bash
+kartr/
+├── fastapi_backend/        # Python 3.11+ Backend
+│   ├── routers/            # API Endpoints (Auth, YouTube, Influencer, etc.)
+│   ├── services/           # Business Logic (AI Analysis, Chat, Graphing)
+│   ├── models/             # Pydantic Schemas & DTOs
+│   ├── utils/              # Middleware, Dependencies, & Logging
+│   └── .env                # Backend Secrets
+├── bun_frontend/           # React 19 Frontend
+│   ├── src/
+│   │   ├── components/     # Atomic & Layout Components
+│   │   ├── pages/          # View Components (Dashboard, Ad Studio, etc.)
+│   │   ├── store/          # Redux Toolkit Slices
+│   │   └── assets/         # Styles & Static Media
+│   └── package.json        # Bun Dependencies
+└── docs/                   # Engineering & Contribution Guides
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Python 3.11+**
+- **Bun** (Recommended) or Node.js
+- **Git**
+
+### 🛠️ Local Setup
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/AnantaCoder/kartr.git
+   cd kartr
+   ```
+
+2. **Backend Configuration**
+   ```bash
+   cd fastapi_backend
+   python -m venv .venv
+   source .venv/bin/activate  # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   # Create .env from .env.example and add your API keys
+   uvicorn main:app --reload
+   ```
+
+3. **Frontend Configuration**
+   ```bash
+   cd ../bun_frontend
+   bun install
+   # Create .env and add VITE_API_URL=http://localhost:8000
+   bun dev
+   ```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for style guides and the PR process.
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 📧 Contact & Support
+
+- **Founder**: Kiran Chawan ([kiransc55@gmail.com](mailto:kiransc55@gmail.com))
+- **AI Engineer**: Anirban Sarkar
+- **Location**: Indira Nagar, Bengaluru, India
+- **Website**: [kartr.ai](http://kartr.ai) (Coming Soon)
