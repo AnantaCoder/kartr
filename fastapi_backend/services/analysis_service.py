@@ -110,6 +110,38 @@ def analyze_influencer_sponsors(video_url: str) -> Dict[str, Any]:
         "model_used": model_used
     }
 
+def analyze_bulk_influencer_sponsors(video_urls: list[str]) -> Dict[str, Any]:
+    """
+    Perform bulk analysis on multiple YouTube videos.
+    """
+    results = []
+    success_count = 0
+    failed_count = 0
+    
+    for url in video_urls:
+        try:
+            result = analyze_influencer_sponsors(url)
+            results.append(result)
+            if "error" not in result.get("analysis", {}):
+                success_count += 1
+            else:
+                failed_count += 1
+        except Exception as e:
+            logger.error(f"Bulk item failed ({url}): {e}")
+            failed_count += 1
+            results.append({
+                "video_id": url,
+                "error": str(e),
+                "analysis": {"error": "Processing failed"}
+            })
+            
+    return {
+        "results": results,
+        "total_count": len(video_urls),
+        "success_count": success_count,
+        "failed_count": failed_count
+    }
+
 def _create_analysis_prompt(video_data: Dict[str, Any]) -> str:
     """Create the prompt for analysis."""
     title = video_data.get("title", "")
@@ -120,12 +152,19 @@ def _create_analysis_prompt(video_data: Dict[str, Any]) -> str:
     return f"""
     Analyze the following YouTube video content to identify influencer marketing and sponsorship details.
     
+    CRITICAL INSTRUCTION: Be extremely precise in identifying the "sponsor_name". 
+    Look for:
+    1. Mentions like "Thanks to [Brand] for sponsoring" or "Sponsored by [Brand]".
+    2. Links in the description like "[Brand] Link:" or "Check out [Brand] at...".
+    3. Discount codes like "Use code [BRANDNAME] to get...".
+    If no clear sponsor is found, return "None".
+    
     Video Title: {title}
     Channel: {channel}
     Tags: {tags}
     
     Description:
-    {description[:3000]}
+    {description[:4000]}
     
     Please provide a structured JSON response with the following keys (use snake_case):
     - is_sponsored (boolean): Is this video sponsored?

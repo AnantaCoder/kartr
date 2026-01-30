@@ -43,7 +43,8 @@ class YouTubeStatsResponse(BaseModel):
 
 class AnalyzeVideoRequest(BaseModel):
     """Request to analyze a video for influencer and sponsor information"""
-    video_url: str = Field(..., description="YouTube video URL to analyze")
+    video_url: Optional[str] = Field(None, description="Single YouTube video URL to analyze")
+    video_urls: Optional[List[str]] = Field(default=None, description="Optional list of multiple YouTube video URLs to analyze")
 
 
 class VideoAnalysis(BaseModel):
@@ -101,3 +102,9 @@ class SaveAnalysisRequest(BaseModel):
     creator_name: str
     creator_industry: str
     sponsors: Optional[List[dict]] = None
+class BulkVideoAnalysisResponse(BaseModel):
+    """Response for bulk video analysis"""
+    results: List[AnalyzeVideoResponse]
+    total_count: int
+    success_count: int
+    failed_count: int

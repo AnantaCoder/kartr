@@ -123,9 +123,6 @@ class MockDatabase:
             'users': 0,
             'youtube_channels': 0,
             'searches': 0,
-            'users': 0,
-            'youtube_channels': 0,
-            'searches': 0,
             'virtual_influencers': 0,
         }
         self._virtual_influencers: Dict[str, Dict[str, Any]] = {}

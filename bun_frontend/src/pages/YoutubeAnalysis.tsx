@@ -20,7 +20,6 @@ const YouTubeAnalysis: React.FC = () => {
   );
 
   const isCreator = perspective === "creator";
-
   const [videoUrl, setVideoUrl] = useState("");
 
   const handleSearch = () => {
@@ -90,35 +89,44 @@ const YouTubeAnalysis: React.FC = () => {
 
         {/* Search Box */}
         <motion.div
-          className="mt-12 flex w-full max-w-2xl items-center gap-3 mb-10"
+          className="mt-12 flex flex-col w-full max-w-2xl gap-4 mb-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
           <div className="relative flex-1 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
-            <Input
-              placeholder={isCreator ? "Paste your video URL for a self-audit..." : "Paste a creator's video URL for brand audit..."}
+            <Search className="absolute left-4 top-5 h-5 w-5 text-gray-500 group-focus-within:text-purple-400 transition-colors z-10" />
+            <textarea
+              placeholder={isCreator
+                ? "Paste video URLs (one per line or comma-separated) for bulk self-audit..."
+                : "Paste YouTube URLs for bulk brand audit..."}
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="pl-12 h-16 rounded-2xl
-                         bg-white/5 border-white/10
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                  handleSearch();
+                }
+              }}
+              className="w-full pl-12 pr-4 py-4 min-h-[120px] rounded-2xl
+                         bg-white/5 border border-white/10
                          text-white placeholder:text-gray-500
-                         focus:ring-2 focus:ring-purple-500 focus:border-transparent
-                         transition-all shadow-inner"
+                         focus:ring-2 focus:ring-purple-500 focus:outline-none
+                         transition-all shadow-inner resize-none"
             />
+            <div className="absolute right-4 bottom-4 text-[10px] text-gray-500">
+              Press Ctrl + Enter to run
+            </div>
           </div>
 
           <Button
             onClick={handleSearch}
             disabled={loading || !videoUrl.trim()}
-            className={`h-16 px-8 rounded-2xl font-bold shadow-2xl transition-all cursor-pointer disabled:opacity-50 ${isCreator ? "bg-purple-600 hover:bg-purple-700 shadow-purple-500/20" : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20"}`}
+            className={`h-14 px-8 rounded-2xl font-bold shadow-2xl transition-all cursor-pointer disabled:opacity-50 ${isCreator ? "bg-purple-600 hover:bg-purple-700 shadow-purple-500/20" : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20"}`}
           >
             {loading ? (
               <Loader2 className="w-6 h-6 animate-spin" />
             ) : (
-              "Run AI Audit"
+              `Run AI Audit (${videoUrl.split(/[,\n]/).filter(u => u.trim()).length} links)`
             )}
           </Button>
         </motion.div>

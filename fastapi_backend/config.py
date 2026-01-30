@@ -38,9 +38,9 @@ class Settings(BaseSettings):
     
     # Gemini API
     GEMINI_API_KEY: str = ""
-    GEMINI_TEXT_MODEL: str = "gemini-1.5-flash"  # For text generation, analysis, Q&A
-    GEMINI_CHAT_MODEL: str = "gemini-1.5-flash"  # For chat conversations
-    GEMINI_IMAGE_MODEL: str = "gemini-1.5-flash"  # For image generation
+    GEMINI_TEXT_MODEL: str = "gemini-2.5-flash"  # For text generation, analysis, Q&A
+    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash-lite"  # For chat conversations
+    GEMINI_IMAGE_MODEL: str = "gemini-2.0-flash-exp-image-generation"  # For image generation
     
     # Grok API (xAI) - Fallback
     GROK_API_KEY: str = ""
@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USE_TLS: bool = True
     
+    # Bluesky settings
     BLUESKY_HANDLE: str = ""
     BLUESKY_PASSWORD: str = ""
     
