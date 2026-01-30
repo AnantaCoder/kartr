@@ -18,6 +18,7 @@ from models.schemas import (
     SaveAnalysisRequest,
     YouTubeChannelResponse,
     MessageResponse,
+    BulkVideoAnalysisResponse,
 )
 from services.youtube_service import youtube_service
 from utils.dependencies import get_current_user
