@@ -121,7 +121,7 @@ async def send_invitation(
     from services.resend_service import ResendService
     resend_service = ResendService()
     try:
-        print(f"INFO: Attempting to send email to: {email} via Resend")
+        logger.info(f"Attempting to send email to: {email} via Resend")
         success = resend_service.send_email(
             to=email,
             subject=subject,
@@ -129,9 +129,9 @@ async def send_invitation(
         )
         if not success:
             # For demo purposes, we log the failure but return success to the UI
-            print(f"WARNING: Email sending failed (Resend API key missing?). Simulating success for: {email}")
+            logger.warning(f"Email sending failed (Resend API key missing?). Simulating success for: {email}")
     except Exception as e:
-        print(f"WARNING: Email service error: {e}")
+        logger.warning(f"Email service error: {e}")
         # Continue to return success for demo experience
         
     return MessageResponse(success=True, message="Invitation sent successfully")
