@@ -72,7 +72,7 @@ const SignupSponsor: React.FC = () => {
             </p>
 
             <div className="flex justify-center mt-4">
-              <div className="h-1 w-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full opacity-50" />
+              <KartrLine width={140} circleSize={24} color="#e11d48" text="Kartr" />
             </div>
           </div>
 

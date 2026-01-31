@@ -72,7 +72,7 @@ const Login: React.FC = () => {
                         </p>
 
                         <div className="flex justify-center mt-6">
-                            <div className="h-1 w-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full opacity-50" />
+                            <KartrLine width={140} circleSize={24} color="#e11d48" text="Kartr" />
                         </div>
                     </div>
 

@@ -144,16 +144,6 @@
   --sidebar-ring: oklch(0.55 0.18 260);
 }
 
---sidebar: oklch(0.12 0.04 270);
---sidebar-foreground: oklch(0.98 0.01 270);
---sidebar-primary: oklch(0.65 0.22 270);
---sidebar-primary-foreground: oklch(0.11 0.03 270);
---sidebar-accent: oklch(0.22 0.06 270);
---sidebar-accent-foreground: oklch(0.98 0.01 270);
---sidebar-border: oklch(0.22 0.06 270);
---sidebar-ring: oklch(0.65 0.22 270);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;

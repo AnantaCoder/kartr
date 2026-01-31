@@ -80,7 +80,7 @@ const ForgotPassword: React.FC = () => {
                                 </p>
 
                                 <div className="flex justify-center mt-4">
-                                    <KartrLine width={120} color="#ec4899" text="Kartr" />
+                                    <KartrLine width={140} circleSize={24} color="#e11d48" text="Kartr" />
                                 </div>
                             </div>
 

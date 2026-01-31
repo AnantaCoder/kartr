@@ -32,14 +32,14 @@ const KartrLine: React.FC<KartrLineProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          
+
         }}
       >
         {/* Line */}
         <div
           style={{
             position: "absolute",
-            left: circleSize + gap ,
+            left: circleSize + gap,
             right: circleSize + gap,
             height: "6px",
             backgroundColor: color,
