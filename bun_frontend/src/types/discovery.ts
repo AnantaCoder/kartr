@@ -31,6 +31,7 @@ export interface DiscoverySearchParams {
   niche: string;
   keywords?: string;
   description?: string;
+  name?: string;
   limit?: number;
 }
 

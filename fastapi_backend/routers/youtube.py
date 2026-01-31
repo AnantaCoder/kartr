@@ -233,6 +233,7 @@ async def analyze_channel(
     """
     Analyze multiple videos from a YouTube channel.
     Accepts Channel ID or URL.
+    Uses AI for accurate sponsor detection.
     """
     try:
         # 1. Get channel info (resolves URL -> ID)
@@ -247,8 +248,17 @@ async def analyze_channel(
         # 2. Extract resolved ID
         resolved_channel_id = channel_data.get("channel_id")
 
-        # 3. Get videos using resolved ID
+        # 3. Get videos using resolved ID (with basic keyword-based sponsor detection)
         videos = youtube_service.get_channel_videos(resolved_channel_id, request.max_videos)
+        
+        # 4. Enhance sponsor detection using AI (async-like processing)
+        try:
+            from services.analysis_service import analyze_video_sponsors_ai
+            videos = analyze_video_sponsors_ai(videos)
+            logger.info(f"AI sponsor analysis completed for {len(videos)} videos")
+        except Exception as e:
+            logger.warning(f"AI sponsor analysis failed, using keyword detection: {e}")
+            # Continue with keyword-based detection results
         
         return {
             "channel": channel_data,

@@ -233,6 +233,7 @@ async def discover_influencers(
     niche: str = Query(..., description="Campaign niche (e.g., 'home appliances', 'fashion')"),
     keywords: str = Query("", description="Comma-separated keywords"),
     description: str = Query("", description="Campaign description for AI matching"),
+    name: str = Query("", description="Search by influencer name/username"),
     limit: int = Query(20, ge=1, le=50, description="Max results"),
     current_user: dict = Depends(require_sponsor)
 ):
@@ -254,6 +255,7 @@ async def discover_influencers(
         niche=niche,
         keywords=keyword_list,
         campaign_description=description,
+        name=name,
         limit=limit
     )
     
@@ -307,67 +309,8 @@ async def get_campaign(
     return CampaignResponse(**campaign)
 
 
-@router.get("/{campaign_id}/influencers", response_model=CampaignInfluencersResponse)
-async def get_campaign_influencers(
-    campaign_id: str,
-    current_user: dict = Depends(require_sponsor_or_admin)
-):
-    """
-    Get influencers matched to a campaign.
-    """
-    # Mock for demo
-    if campaign_id == "campaign_400cbdc66d28":
-        from datetime import datetime
-        # Return mock influencers
-        return {
-            "campaign": {
-                "id": "campaign_400cbdc66d28",
-                "sponsor_id": current_user["id"],
-                "name": "Winter Tech Gear 2026",
-                "description": "Mock Campaign",
-                "niche": "Tech",
-                "status": "active",
-                "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat(),
-                "matched_influencers_count": 2
-            },
-            "matched_influencers": [
-                {
-                    "influencer_id": "inf_mock_1",
-                    "username": "TechReviewerPro",
-                    "full_name": "Tech Reviewer Pro",
-                    "relevance_score": 95.0,
-                    "matching_keywords": ["tech", "gadgets"],
-                    "status": "invited",
-                    "ai_analysis": "Great fit for winter tech."
-                },
-                {
-                    "influencer_id": "inf_mock_2",
-                    "username": "GadgetGuru",
-                    "full_name": "Gadget Guru",
-                    "relevance_score": 88.0,
-                    "matching_keywords": ["reviews"],
-                    "status": "suggested",
-                    "ai_analysis": "Good engagement."
-                }
-            ],
-            "total_matches": 2
-        }
 
-    # Real logic
-    campaign = CampaignService.get_campaign(campaign_id, current_user["id"])
-    if not campaign:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Campaign not found"
-        )
-        
-    influencers = CampaignService.get_campaign_influencers(campaign_id, current_user["id"])
-    return {
-        "campaign": campaign,
-        "matched_influencers": influencers,
-        "total_matches": len(influencers)
-    }
+# NOTE: The /{campaign_id}/influencers route is defined below in the Influencer Matching section
 
 
 @router.put("/{campaign_id}", response_model=CampaignResponse)
@@ -541,6 +484,31 @@ async def pause_campaign(
         campaign_id=campaign_id,
         sponsor_id=current_user["id"],
         data={"status": "paused"}
+    )
+    
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Campaign not found"
+        )
+    
+    return CampaignResponse(**updated)
+
+
+@router.post("/{campaign_id}/inactivate", response_model=CampaignResponse)
+async def inactivate_campaign(
+    campaign_id: str,
+    current_user: dict = Depends(require_sponsor)
+):
+    """
+    Mark a campaign as inactive.
+    
+    Sponsor only endpoint.
+    """
+    updated = CampaignService.update_campaign(
+        campaign_id=campaign_id,
+        sponsor_id=current_user["id"],
+        data={"status": "inactive"}
     )
     
     if not updated:

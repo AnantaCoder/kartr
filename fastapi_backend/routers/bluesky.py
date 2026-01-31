@@ -82,6 +82,7 @@ async def create_post(
     image_url: Optional[str] = Form(None),
     video_url: Optional[str] = Form(None),
     image_file: Optional[UploadFile] = File(None),
+    video_file: Optional[UploadFile] = File(None),
     current_user: dict = Depends(get_current_user)
 ):
     """
@@ -93,6 +94,7 @@ async def create_post(
     - Text with image file (upload)
     - Text with image path (existing file)
     - Text with video path
+    - Text with video file (upload)
     """
     try:
         user_full = AuthService.get_user_by_id(current_user["id"])
@@ -124,9 +126,22 @@ async def create_post(
 
         # Handle video path - either direct path or filename in VIDEOS_DIR
         final_video_path = video_path
+        
+        # Handle video upload if provided (overrides path)
+        if video_file:
+            uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+            os.makedirs(uploads_dir, exist_ok=True)
+            
+            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            filename = f"video_{timestamp}_{video_file.filename}"
+            final_video_path = os.path.join(uploads_dir, filename)
+            
+            content = await video_file.read()
+            with open(final_video_path, "wb") as f:
+                f.write(content)
 
         # If video_path is just a filename (from frontend), resolve it to VIDEOS_DIR
-        if final_video_path and not os.path.isabs(final_video_path) and not os.path.exists(final_video_path):
+        if final_video_path and not video_file and not os.path.isabs(final_video_path) and not os.path.exists(final_video_path):
             potential_path = os.path.join(VIDEOS_DIR, final_video_path)
             if os.path.exists(potential_path):
                 final_video_path = potential_path
@@ -140,6 +155,14 @@ async def create_post(
                 video_path=final_video_path,
                 alt_text=alt_text or "Video"
             )
+            
+            # Clean up uploaded video file
+            if video_file:
+                try:
+                    os.remove(final_video_path)
+                except:
+                    pass
+                    
             return BlueskyPostResponse(
                 success=result.get("success", False),
                 message=result.get("message"),

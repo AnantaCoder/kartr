@@ -399,7 +399,7 @@ class ChatService:
         return True, message_data, None
     
     @classmethod
-    def generate_ai_response(
+    async def generate_ai_response(
         cls,
         conversation_id: str,
         user_id: str,
@@ -507,7 +507,7 @@ class ChatService:
         return False, None, error_msg
     
     @classmethod
-    def send_message_and_get_response(
+    async def send_message_and_get_response(
         cls,
         conversation_id: str,
         user_id: str,
@@ -538,7 +538,7 @@ class ChatService:
             return False, None, error
         
         # Generate AI response
-        success, ai_response, error = cls.generate_ai_response(
+        success, ai_response, error = await cls.generate_ai_response(
             conversation_id, user_id, user_message
         )
         if not success:

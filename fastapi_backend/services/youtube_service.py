@@ -346,30 +346,121 @@ class YouTubeService:
                 stats = item.get('statistics', {})
                 desc = snippet.get('description', '') or ''
                 
-                # Basic Sponsor Detection (Keyword based)
+                # Enhanced Sponsor Detection
                 is_sponsored = False
                 sponsor_name = None
                 
                 lower_desc = desc.lower()
-                sponsor_keywords = ['sponsored by', 'partnered with', 'thanks to', 'brought to you by']
+                title_lower = snippet.get('title', '').lower()
                 
-                for keyword in sponsor_keywords:
-                    if keyword in lower_desc:
+                # Known sponsor brands (common YouTube sponsors)
+                known_sponsors = {
+                    'nordvpn': 'NordVPN',
+                    'expressvpn': 'ExpressVPN', 
+                    'surfshark': 'Surfshark',
+                    'squarespace': 'Squarespace',
+                    'skillshare': 'Skillshare',
+                    'brilliant': 'Brilliant',
+                    'curiositystream': 'CuriosityStream',
+                    'nebula': 'Nebula',
+                    'audible': 'Audible',
+                    'raycon': 'Raycon',
+                    'raid shadow legends': 'Raid Shadow Legends',
+                    'raid: shadow legends': 'Raid Shadow Legends',
+                    'honey': 'Honey',
+                    'manscaped': 'Manscaped',
+                    'betterhelp': 'BetterHelp',
+                    'hello fresh': 'HelloFresh',
+                    'hellofresh': 'HelloFresh',
+                    'dashlane': 'Dashlane',
+                    'lastpass': 'LastPass',
+                    'grammarly': 'Grammarly',
+                    'wix': 'Wix',
+                    'fiverr': 'Fiverr',
+                    'dollar shave club': 'Dollar Shave Club',
+                    'blue apron': 'Blue Apron',
+                    'casper': 'Casper',
+                    'stamps.com': 'Stamps.com',
+                    'seat geek': 'SeatGeek',
+                    'seatgeek': 'SeatGeek',
+                    'funcrate': 'FunCrate',
+                    'lootcrate': 'LootCrate',
+                    'world of warships': 'World of Warships',
+                    'world of tanks': 'World of Tanks',
+                    'opera gx': 'Opera GX',
+                    'keeps': 'Keeps',
+                    'hims': 'Hims',
+                    'established titles': 'Established Titles',
+                    'ridge wallet': 'Ridge Wallet',
+                    'ridge': 'Ridge',
+                    'casetify': 'CASETiFY',
+                    'glasswire': 'GlassWire',
+                    'private internet access': 'Private Internet Access',
+                    'pia': 'PIA VPN',
+                    'madrinas': 'Madrinas Coffee',
+                    'gfuel': 'G Fuel',
+                    'g fuel': 'G Fuel',
+                }
+                
+                # Check for known sponsors first
+                combined_text = lower_desc + ' ' + title_lower
+                for key, brand in known_sponsors.items():
+                    if key in combined_text:
                         is_sponsored = True
-                        # Try to extract name (simple heuristic)
-                        try:
-                            parts = lower_desc.split(keyword)
-                            if len(parts) > 1:
-                                # Get first few words after keyword
-                                candidate = parts[1].strip().split('\n')[0]
-                                # Clean up punctuation
-                                candidate = candidate.strip('.:,!- ')
-                                # Take first 3-4 words max
-                                words = candidate.split()
-                                sponsor_name = " ".join(words[:3]).title()
-                        except:
-                            sponsor_name = "Unknown Sponsor"
+                        sponsor_name = brand
                         break
+                
+                # If no known sponsor found, check keywords
+                if not is_sponsored:
+                    sponsor_keywords = [
+                        'sponsored by', 'partnered with', 'thanks to', 'brought to you by',
+                        'this video is sponsored by', 'this episode is sponsored by',
+                        'a special thanks to', 'in partnership with', 'proudly sponsored by',
+                        'paid promotion', '#ad ', '(ad)', '[ad]', 'includes paid promotion'
+                    ]
+                    
+                    for keyword in sponsor_keywords:
+                        if keyword in lower_desc:
+                            is_sponsored = True
+                            keyword_pos = lower_desc.find(keyword)
+                            if keyword_pos != -1:
+                                after_keyword = desc[keyword_pos + len(keyword):].strip()
+                                lines = after_keyword.split('\n')
+                                if lines:
+                                    candidate = lines[0].strip()
+                                    candidate = candidate.strip('.:,!-– ')
+                                    candidate = re.sub(r'https?://\S+', '', candidate)
+                                    candidate = re.sub(r'[^\w\s\'-]', ' ', candidate).strip()
+                                    words = candidate.split()
+                                    if words and len(words[0]) > 1:
+                                        sponsor_name = " ".join(words[:3]).strip()
+                                        sponsor_name = re.sub(r'\s+(for|to|at|the|and|or|a|an)$', '', sponsor_name, flags=re.IGNORECASE)
+                                        if sponsor_name and len(sponsor_name) > 2:
+                                            # Proper title case
+                                            sponsor_name = sponsor_name.title()
+                                            break
+                
+                # Try sponsor link patterns if still no name
+                if is_sponsored and not sponsor_name:
+                    link_patterns = [
+                        r'(?:https?://)?(?:www\.)?([a-zA-Z0-9]+)\.com/[a-zA-Z0-9]+',
+                        r'[Uu]se code[:\s]+["\']?([A-Z0-9]+)["\']?',
+                        r'[Pp]romo code[:\s]+["\']?([A-Z0-9]+)["\']?',
+                        r'([A-Z][a-zA-Z]+)\.com/\w+',
+                    ]
+                    for pattern in link_patterns:
+                        match = re.search(pattern, desc)
+                        if match:
+                            potential = match.group(1)
+                            # Skip common non-sponsor domains
+                            skip_domains = ['youtube', 'twitter', 'instagram', 'facebook', 'tiktok', 'discord', 'patreon', 'twitch', 'google', 'amazon']
+                            if potential.lower() not in skip_domains:
+                                sponsor_name = potential.title()
+                                break
+                
+                # Final fallback
+                if is_sponsored and not sponsor_name:
+                    sponsor_name = "Sponsored"
                 
                 videos.append({
                     "video_id": item['id'],

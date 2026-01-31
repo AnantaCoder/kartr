@@ -21,7 +21,7 @@ export interface Campaign {
   budget_max?: number;
   keywords: string[];
   requirements?: string;
-  status: 'draft' | 'active' | 'paused' | 'completed';
+  status: 'draft' | 'active' | 'paused' | 'completed' | 'inactive';
   created_at: string;
   updated_at: string;
   matched_influencers_count: number;

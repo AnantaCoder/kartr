@@ -4,7 +4,7 @@
  */
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Calendar, Users, DollarSign, Edit2, Trash2, Play, Pause, CheckCircle, ExternalLink } from 'lucide-react';
+import { Calendar, Users, DollarSign, Edit2, Trash2, Play, Pause, CheckCircle, ExternalLink, XCircle } from 'lucide-react';
 import type { Campaign, CampaignStatus } from '../../types/campaign';
 
 interface CampaignCardProps {
@@ -13,6 +13,7 @@ interface CampaignCardProps {
     onDelete?: (id: string) => void;
     onActivate?: (id: string) => void;
     onPause?: (id: string) => void;
+    onInactivate?: (id: string) => void;
     onFindInfluencers?: (campaign: Campaign) => void;
 }
 
@@ -21,6 +22,7 @@ const statusConfig: Record<CampaignStatus, { color: string; icon: any; label: st
     active: { color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', icon: Play, label: 'Active' },
     paused: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: Pause, label: 'Paused' },
     completed: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: CheckCircle, label: 'Completed' },
+    inactive: { color: 'bg-red-500/10 text-red-400 border-red-500/30', icon: XCircle, label: 'Inactive' },
 };
 
 const CampaignCard = ({
@@ -29,6 +31,7 @@ const CampaignCard = ({
     onDelete,
     onActivate,
     onPause,
+    onInactivate,
     onFindInfluencers,
 }: CampaignCardProps) => {
     const status = statusConfig[campaign.status];
@@ -206,7 +209,23 @@ const CampaignCard = ({
                         Pause
                     </button>
                 )}
-                {onFindInfluencers && campaign.status !== 'completed' && (
+                {(campaign.status === 'active' || campaign.status === 'paused') && onInactivate && (
+                    <button
+                        onClick={() => onInactivate(campaign.id)}
+                        className="flex-1 py-2 px-4 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium"
+                    >
+                        Make Inactive
+                    </button>
+                )}
+                {campaign.status === 'inactive' && onActivate && (
+                    <button
+                        onClick={() => onActivate(campaign.id)}
+                        className="flex-1 py-2 px-4 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors text-sm font-medium"
+                    >
+                        Activate
+                    </button>
+                )}
+                {onFindInfluencers && campaign.status !== 'completed' && campaign.status !== 'inactive' && (
                     <button
                         onClick={() => onFindInfluencers(campaign)}
                         className="flex-1 py-2 px-4 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors text-sm font-medium"

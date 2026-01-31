@@ -138,7 +138,7 @@ const ChatBox = () => {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSend()}
                 placeholder="Ask something..."
-                className="flex-1 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400"
+                className="flex-1 rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400 text-black font-bold"
               />
               <button
                 onClick={handleSend}

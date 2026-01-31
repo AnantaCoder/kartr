@@ -40,6 +40,7 @@ class InfluencerDiscoveryService:
         niche: str,
         keywords: List[str],
         campaign_description: str,
+        name: str = "",
         budget_min: Optional[float] = None,
         budget_max: Optional[float] = None,
         limit: int = 20
@@ -51,6 +52,7 @@ class InfluencerDiscoveryService:
             niche: Campaign niche (e.g., "home appliances", "fashion")
             keywords: List of relevant keywords
             campaign_description: Full campaign description for AI matching
+            name: Filter by name/username
             budget_min: Minimum budget (for future filtering)
             budget_max: Maximum budget (for future filtering)
             limit: Maximum results to return
@@ -60,9 +62,17 @@ class InfluencerDiscoveryService:
         """
         all_keywords = set([k.lower() for k in keywords])
         niche_lower = niche.lower()
+        name_lower = name.lower().strip() if name else ""
         
         # Step 1: Get all influencers with their YouTube data
         influencers_with_data = InfluencerDiscoveryService._get_influencers_with_youtube()
+
+        # Filter by name if provided
+        if name_lower:
+            influencers_with_data = [
+                inf for inf in influencers_with_data
+                if name_lower in inf.get("full_name", "").lower() or name_lower in inf.get("username", "").lower()
+            ]
         
         # Step 2: Calculate base scores using keyword matching
         scored_influencers = []

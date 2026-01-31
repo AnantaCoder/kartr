@@ -128,26 +128,9 @@ class BlueskyService:
             # If we are uploading directly to video.bsky.app, we need a token for IT.
             # However, the error comes FROM video.bsky.app saying the token aud is wrong.
             
-            # UPDATE: The "lxm" (lexicon method) `app.bsky.video.uploadVideo` is correct.
-            # The `aud` should be the service that will *verify* the token.
-            # It seems we should use the user's PDS DID as the audience because the PDS delegates/verifies?
-            # Or simpler: let's try using the PDS DID mentioned in the error if we can find it, 
-            # OR better yet, let's try identifying the PDS DID dynamically.
-            
-            # Actually, `com.atproto.server.describe_server` might give us the DID.
-            # But let's try a simpler approach: 
-            # The error says "should be the user's PDS DID".
-            # We can get the PDS URL from the client session.
-            
-            # Let's dynamically resolve the PDS DID or use a generic 'did:web:bsky.social' if that's the main usage,
-            # but for federated hosts (like discina.us-west...), we need that specific DID.
-            
-            # ATProto python client usually manages the service auth if we just pass the right Params.
-            # Let's try NOT specifying 'aud' and see if it defaults correctly, OR specify the PDS.
-            
-            # Strategy: Resolve the user's PDS DID.
-            # We can try to fetch it via `describe_server`.
-            # This asks the server we are connected to (the PDS) for its info.
+            # UPDATE: The service auth token scope/lxm must be `com.atproto.repo.uploadBlob`
+            # even though we're using the video upload endpoint. The video service validates
+            # the token against this scope.
             
             pds_info = client.com.atproto.server.describe_server()
             pds_did = pds_info.did
@@ -157,7 +140,8 @@ class BlueskyService:
             service_auth = client.com.atproto.server.get_service_auth(
                 models.ComAtprotoServerGetServiceAuth.Params(
                     aud=pds_did,
-                    lxm="app.bsky.video.uploadVideo"
+                    lxm="com.atproto.repo.uploadBlob",  # CORRECT scope for video uploads
+                    exp=int(time.time()) + 30 * 60  # 30 minute expiry
                 )
             )
         except Exception as e:
@@ -178,41 +162,51 @@ class BlueskyService:
             "name": f"video_{int(time.time())}.mp4"
         }
         
-        upload_max_retries = 3
-        
         # Use httpx for robust connection handling
         limits = httpx.Limits(max_keepalive_connections=5, max_connections=10)
-        timeout = httpx.Timeout(300.0, connect=60.0) # 5 min total, 60s connect
+        timeout = httpx.Timeout(300.0, connect=60.0)  # 5 min total, 60s connect
         
         async with httpx.AsyncClient(limits=limits, timeout=timeout) as http_client:
-            for attempt in range(upload_max_retries):
-                try:
-                    # Read file content into memory for async upload
-                    # Note: For very large files, we should use aiofiles, but for <50MB this is fine
-                    # and avoids "sync request with AsyncClient" error
-                    with open(video_path, 'rb') as f:
-                        video_bytes = f.read()
+            try:
+                # Read file content into memory for async upload
+                with open(video_path, 'rb') as f:
+                    video_bytes = f.read()
+                    
+                response = await http_client.post(
+                    upload_url, 
+                    headers=headers, 
+                    params=params, 
+                    content=video_bytes
+                )
+                
+                if response.status_code != 200:
+                    error_text = response.text
+                    logger.error(f"Video upload status: {response.status_code} - {error_text}")
+                    
+                    # Handle "already_exists" error (success case)
+                    try:
+                        error_json = response.json()
+                        if error_json.get("error") == "already_exists" and error_json.get("jobId"):
+                            logger.info(f"Video already processed. Using existing Job ID: {error_json.get('jobId')}")
+                            job_status = error_json
+                        else:
+                            # Check for unconfirmed email error
+                            if "unconfirmed_email" in error_text:
+                                raise Exception("UNCONFIRMED_EMAIL: Please verify your email in Bluesky settings before uploading videos.")
+                            
+                            raise Exception(f"Video upload failed: {error_text}")
+                    except ValueError:
+                         # JSON parsing failed, treat as string error
+                        if "unconfirmed_email" in error_text:
+                            raise Exception("UNCONFIRMED_EMAIL: Please verify your email in Bluesky settings before uploading videos.")
+                        raise Exception(f"Video upload failed: {error_text}")
                         
-                    response = await http_client.post(
-                        upload_url, 
-                        headers=headers, 
-                        params=params, 
-                        content=video_bytes
-                    )
-                    
-                    if response.status_code != 200:
-                        logger.error(f"Video upload failed (Attempt {attempt+1}): {response.status_code} - {response.text}")
-                        raise Exception(f"Video upload failed: {response.text}")
-                    
+                else:
                     job_status = response.json()
                     logger.info(f"Video upload started, job ID: {job_status.get('jobId')}")
-                    break
-                except Exception as e:
-                    logger.warning(f"Video upload attempt {attempt+1} failed: {str(e)}")
-                    if attempt < upload_max_retries - 1:
-                        await asyncio.sleep(2 * (attempt + 1))
-                    else:
-                        raise Exception(f"Video upload failed after {upload_max_retries} attempts: {str(e)}")
+            except Exception as e:
+                logger.error(f"Video upload failed: {str(e)}")
+                raise
         
         # Step 3: Poll for job completion
         job_id = job_status.get("jobId")
@@ -261,7 +255,7 @@ class BlueskyService:
         raise Exception("Video processing timed out after 5 minutes")
 
     async def post_video(self, identifier: str, password: str, text: str, video_path: str, alt_text: str = "Video") -> dict:
-        """Post text with video using Bluesky's video processing service"""
+        """Post text with video using Bluesky's video processing service with manual flow for robust handling"""
         if not os.path.exists(video_path):
             raise HTTPException(status_code=404, detail=f"Video file not found: {video_path}")
         
@@ -275,6 +269,7 @@ class BlueskyService:
         client = self._get_client(identifier, password)
         
         try:
+            logger.info("Uploading video to processing service...")
             # Upload to video service and wait for processing
             video_result = await self._upload_video_to_service(client, video_path)
             
@@ -283,24 +278,24 @@ class BlueskyService:
             if not blob_data:
                 raise Exception("No blob data returned from video service")
             
-            # Construct the blob reference
-            video_blob = models.BlobRef(
-                mime_type=blob_data.get("mimeType", "video/mp4"),
-                size=blob_data.get("size", file_size),
-                ref=models.common.BlobRefLink(link=blob_data.get("ref", {}).get("$link"))
-            )
+            logger.info("Video processing complete. Waiting 10s for CDN propagation...")
+            await asyncio.sleep(10)
+            
+            # Direct blob usage - passed as dict
+            # The atproto SDK will validate this against the schema
             
             # Create video embed
+            # We skip aspect ratio to allow auto-detection/default to prevent player errors
             embed = models.AppBskyEmbedVideo.Main(
-                video=video_blob,
-                alt=alt_text,
-                aspect_ratio=models.AppBskyEmbedDefs.AspectRatio(width=16, height=9)
+                video=blob_data,
+                alt=alt_text
             )
             
-            # Send post
-            # Note: client.send_post is synchronous, but that's okay as it's quick
-            # The heavy lifting (video upload) is now async
-            post = client.send_post(text=text, embed=embed)
+            logger.info("Sending post with video embed...")
+            
+            # Send post (run in thread to not block)
+            loop = asyncio.get_running_loop()
+            post = await loop.run_in_executor(None, lambda: client.send_post(text=text, embed=embed))
             
             logger.info(f"Video posted successfully: {post.uri}")
             return {
@@ -309,6 +304,16 @@ class BlueskyService:
                 "cid": post.cid,
                 "message": "Video post created successfully"
             }
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Failed to post video: {error_msg}")
+            
+            # Check for unconfirmed email error in the exception message
+            if "unconfirmed_email" in error_msg.lower() or "verify your email" in error_msg.lower():
+                 raise HTTPException(status_code=400, detail="UNCONFIRMED_EMAIL: Please verify your email in Bluesky settings before uploading videos.")
+            
+            raise HTTPException(status_code=500, detail=f"Failed to post video: {error_msg}")
 
         except HTTPException:
             raise

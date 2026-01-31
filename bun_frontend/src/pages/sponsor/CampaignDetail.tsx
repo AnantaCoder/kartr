@@ -19,7 +19,8 @@ import {
     UserPlus,
     Loader2,
     FileText,
-    Download
+    Download,
+    ExternalLink
 } from 'lucide-react';
 import { useSponsorGuard } from '../../hooks/useRoleGuard';
 import apiClient from '../../services/apiClient';
@@ -31,6 +32,7 @@ interface CampaignInfluencer {
     status: 'invited' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
     added_at: string;
     notes?: string;
+    post_url?: string;  // URL to completed post
 }
 
 interface Campaign {
@@ -65,13 +67,15 @@ const CampaignDetail = () => {
                 const influencersRes = await apiClient.get(`/campaigns/${campaignId}/influencers`);
 
                 // Map the backend response to our interface
-                // Backend returns: { influencer: {...}, status, notes, relevance_score }
-                const mappedInfluencers = (influencersRes.data.matched_influencers || []).map((item: any) => ({
-                    influencer_id: item.influencer?.user_id || item.influencer?.id || '',
-                    influencer_name: item.influencer?.channel_title || item.influencer?.username || 'Unknown',
+                // Backend returns: { matched_influencers: [{ influencer_id, username, full_name, status, ... }] }
+                const influencerData = influencersRes.data.matched_influencers || [];
+                const mappedInfluencers = influencerData.map((item: any) => ({
+                    influencer_id: item.influencer_id || item.influencer?.user_id || item.influencer?.id || '',
+                    influencer_name: item.full_name || item.username || item.influencer?.channel_title || item.influencer?.username || 'Unknown Influencer',
                     status: item.status || 'invited',
-                    added_at: item.influencer?.created_at || new Date().toISOString(),
-                    notes: item.notes
+                    added_at: item.added_at || item.influencer?.created_at || new Date().toISOString(),
+                    notes: item.notes || item.ai_analysis || '',
+                    post_url: item.post_url || null
                 }));
 
                 setCampaign({
@@ -157,6 +161,20 @@ const CampaignDetail = () => {
                     <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm">
                         <CheckCircle className="w-4 h-4" />
                         Completed
+                    </span>
+                );
+            case 'inactive':
+                return (
+                    <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-sm">
+                        <XCircle className="w-4 h-4" />
+                        Inactive
+                    </span>
+                );
+            case 'inactive':
+                return (
+                    <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-sm">
+                        <XCircle className="w-4 h-4" />
+                        Inactive
                     </span>
                 );
             default: // 'draft'
@@ -357,7 +375,19 @@ const CampaignDetail = () => {
                                                 </span>
                                             )}
                                             {getStatusBadge(influencer.status)}
-                                            {influencer.status === 'completed' && (
+                                            {influencer.status === 'completed' && influencer.post_url && (
+                                                <a
+                                                    href={influencer.post_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="p-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded-lg transition-colors flex items-center gap-1"
+                                                    title="View Post"
+                                                >
+                                                    <ExternalLink className="w-4 h-4" />
+                                                    <span className="text-xs hidden md:inline">View Post</span>
+                                                </a>
+                                            )}
+                                            {influencer.status === 'completed' && !influencer.post_url && (
                                                 <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="View Report">
                                                     <FileText className="w-4 h-4" />
                                                 </button>

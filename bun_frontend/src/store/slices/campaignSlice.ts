@@ -98,6 +98,17 @@ export const pauseCampaign = createAsyncThunk(
   }
 );
 
+export const inactivateCampaign = createAsyncThunk(
+  'campaigns/inactivateCampaign',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      return await campaignService.inactivateCampaign(id);
+    } catch (error: any) {
+      return rejectWithValue(getErrorMessage(error, 'Failed to inactivate campaign'));
+    }
+  }
+);
+
 const campaignSlice = createSlice({
   name: 'campaigns',
   initialState,
@@ -163,6 +174,13 @@ const campaignSlice = createSlice({
       })
       // pauseCampaign
       .addCase(pauseCampaign.fulfilled, (state, action) => {
+        const index = state.campaigns.findIndex((c) => c.id === action.payload.id);
+        if (index !== -1) {
+          state.campaigns[index] = action.payload;
+        }
+      })
+      // inactivateCampaign
+      .addCase(inactivateCampaign.fulfilled, (state, action) => {
         const index = state.campaigns.findIndex((c) => c.id === action.payload.id);
         if (index !== -1) {
           state.campaigns[index] = action.payload;

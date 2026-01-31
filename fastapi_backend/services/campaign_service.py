@@ -44,7 +44,7 @@ class CampaignService:
             "budget_max": data.get("budget_max"),
             "keywords": data.get("keywords", []),
             "requirements": data.get("requirements"),
-            "status": "draft",
+            "status": "active",  # Campaigns are active by default
             "created_at": now,
             "updated_at": now,
             "matched_influencers_count": 0
@@ -257,7 +257,8 @@ class CampaignService:
             existing = get_mock_db().get_campaign_influencer_record(campaign_id, influencer_id) is not None
             
         if existing:
-            return False
+            logger.info(f"Influencer {influencer_id} is already in campaign {campaign_id} (skipping duplicate add)")
+            return True
             
         record_data = {
             "campaign_id": campaign_id,
@@ -301,7 +302,7 @@ class CampaignService:
         else:
             records = get_mock_db().get_campaign_influencers(campaign_id)
             
-        # Enrich with influencer details
+        # Enrich with influencer details and return flat structure matching InfluencerMatch schema
         from services.influencer_discovery_service import influencer_discovery_service
         results = []
         for record in records:
@@ -310,11 +311,18 @@ class CampaignService:
                 match_score = CampaignService._calculate_match_score(
                     inf, set(campaign.get("keywords", [])), campaign.get("niche", "")
                 )
+                # Flatten the structure to match InfluencerMatch schema
                 results.append({
-                    "influencer": inf,
+                    "influencer_id": record["influencer_id"],
+                    "username": inf.get("username") or inf.get("channel_title") or "Unknown",
+                    "full_name": inf.get("full_name") or inf.get("channel_title") or "",
                     "relevance_score": match_score,
-                    "status": record.get("status"),
-                    "notes": record.get("notes")
+                    "matching_keywords": list(set(campaign.get("keywords", [])) & set(inf.get("keywords", []))),
+                    "status": record.get("status", "invited"),
+                    "notes": record.get("notes"),
+                    "ai_analysis": inf.get("ai_analysis"),
+                    "added_at": record.get("added_at"),
+                    "post_url": record.get("post_url")  # For completed posts
                 })
         return results
 

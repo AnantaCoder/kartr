@@ -19,6 +19,7 @@ export const discoverInfluencers = async (
       niche: params.niche,
       keywords: params.keywords || '',
       description: params.description || '',
+      name: params.name || '',
       limit: params.limit || 20,
     },
   });

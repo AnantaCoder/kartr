@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from utils.dependencies import get_current_user
 from services.youtube_service import youtube_service
 from services.analysis_service import analyze_influencer_sponsors, generate_sponsorship_pitch, get_ai_recommendations, create_analysis_document
-from services.resend_service import resend_service
+
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 from io import BytesIO
@@ -226,21 +226,47 @@ async def generate_pitch(request: PitchRequest, current_user: dict = Depends(get
         logger.error(f"Error generating pitch: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate pitch")
 
-@router.post("/send-pitch")
-async def send_pitch(request: SendEmailRequest, current_user: dict = Depends(get_current_user)):
-    """Send a sponsorship pitch email using Resend."""
-    try:
-        result = resend_service.send_email(
-            to=request.to_email,
-            subject=request.subject,
-            html_content=request.body
-        )
-        if not result["success"]:
-            raise HTTPException(status_code=400, detail=result["error"])
-        return result
-    except Exception as e:
-        logger.error(f"Error sending pitch: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
+from models.campaign_schemas import InvitationResponse, CampaignStatusUpdate
+from services.campaign_service import CampaignService
+
+@router.get("/invitations")
+async def get_my_invitations(current_user: dict = Depends(get_current_user)):
+    """Get all campaign invitations for the current influencer."""
+    return CampaignService.get_influencer_invitations(current_user["id"])
+
+@router.post("/campaigns/{campaign_id}/respond")
+async def respond_to_invitation(
+    campaign_id: str,
+    response: InvitationResponse,
+    current_user: dict = Depends(get_current_user)
+):
+    """Accept or reject a campaign invitation."""
+    success, error = CampaignService.respond_to_invitation(
+        influencer_id=current_user["id"],
+        campaign_id=campaign_id,
+        accept=response.accept
+    )
+    if not success:
+        raise HTTPException(status_code=400, detail=error or "Failed to respond to invitation")
+    return {"success": True, "message": f"Invitation {'accepted' if response.accept else 'rejected'}"}
+
+@router.post("/campaigns/{campaign_id}/status")
+async def update_campaign_status(
+    campaign_id: str,
+    status_update: CampaignStatusUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update working status of a campaign (in_progress, completed, etc)."""
+    success, error = CampaignService.update_campaign_status(
+        influencer_id=current_user["id"],
+        campaign_id=campaign_id,
+        new_status=status_update.status
+    )
+    if not success:
+        raise HTTPException(status_code=400, detail=error or "Failed to update status")
+    return {"success": True, "message": f"Status updated to {status_update.status}"}
+
 
 @router.get("/past-campaigns")
 async def get_past_campaigns(current_user: dict = Depends(get_current_user)):

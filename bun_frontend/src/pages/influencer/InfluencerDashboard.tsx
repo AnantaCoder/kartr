@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SponsorshipPitchModal from '../../components/influencer/SponsorshipPitchModal';
+import CampaignInvites from '../../components/influencer/CampaignInvites';
 
 interface ChannelStats {
     totalSubscribers: number;
@@ -270,6 +271,10 @@ const InfluencerDashboard = () => {
         }
     };
 
+    const handleViewInvites = () => {
+        setActiveTab('invites');
+    };
+
     useEffect(() => {
         if (isAuthorized) {
             fetchStats();
@@ -372,6 +377,10 @@ const InfluencerDashboard = () => {
                     <TabsList className="bg-white/5 border border-white/10 p-1">
                         <TabsTrigger value="overview" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-400">
                             Overview
+                        </TabsTrigger>
+                        <TabsTrigger value="invites" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-400 flex items-center gap-2">
+                            Invites
+                            <span className="bg-purple-500/20 text-purple-200 text-[10px] px-1.5 py-0.5 rounded-full border border-purple-500/30">2</span>
                         </TabsTrigger>
                         <TabsTrigger value="sponsorships" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-gray-400">
                             Sponsorship Hub
@@ -489,12 +498,12 @@ const InfluencerDashboard = () => {
                                 <p className="text-gray-400 text-sm mb-4">
                                     View and respond to campaign invitations from sponsors.
                                 </p>
-                                <Link
-                                    to="/influencer/invites"
-                                    className="inline-flex items-center justify-center w-full px-4 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 shadow-none"
+                                <Button
+                                    onClick={handleViewInvites}
+                                    className="w-full bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 shadow-none border border-purple-500/10"
                                 >
                                     View Invites
-                                </Link>
+                                </Button>
                             </div>
                         </motion.div>
 
@@ -700,6 +709,10 @@ const InfluencerDashboard = () => {
                         )}
                     </TabsContent>
 
+                    <TabsContent value="invites" className="mt-6 space-y-8 outline-none">
+                        <CampaignInvites />
+                    </TabsContent>
+
                     <TabsContent value="sponsorships" className="mt-6 space-y-8 outline-none">
                         {/* Category Filter Tabs */}
                         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
@@ -835,39 +848,7 @@ const InfluencerDashboard = () => {
                                 )}
                             </div>
 
-                            {/* Recent Inquiries / Emails */}
-                            <div className="space-y-3">
-                                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <Mail className="w-5 h-5 text-purple-400" />
-                                    Inquiries & Threads
-                                </h2>
-                                <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
-                                    {/* Mock Email List - would typically come from API */}
-                                    <div className="divide-y divide-white/5">
-                                        {[
-                                            { from: "NordVPN Marketing", subject: "Sponsorship Opportunity Q1", time: "2h ago", unread: true },
-                                            { from: "Skillshare Team", subject: "Re: Contract deliverables", time: "1d ago", unread: false },
-                                            { from: "ASUS ROG", subject: "Product review inquiry", time: "3d ago", unread: false }
-                                        ].map((mail, i) => (
-                                            <div key={i} className={`p-4 hover:bg-white/[0.02] cursor-pointer transition-colors flex gap-3 ${mail.unread ? 'bg-purple-500/5' : ''}`}>
-                                                <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${mail.unread ? 'bg-purple-500' : 'bg-transparent'}`} />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <p className={`text-sm truncate ${mail.unread ? 'text-white font-semibold' : 'text-gray-300'}`}>
-                                                            {mail.from}
-                                                        </p>
-                                                        <p className="text-[10px] text-gray-500 whitespace-nowrap">{mail.time}</p>
-                                                    </div>
-                                                    <p className="text-xs text-gray-500 truncate">{mail.subject}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <div className="p-3 text-center border-t border-white/5">
-                                            <button className="text-xs text-purple-400 hover:text-purple-300 font-medium">View All Messages</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+
                         </motion.div>
 
                     </TabsContent>

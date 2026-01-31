@@ -33,7 +33,7 @@ class CampaignUpdate(BaseModel):
     budget_max: Optional[float] = Field(None, ge=0)
     keywords: Optional[List[str]] = None
     requirements: Optional[str] = Field(None, max_length=1000)
-    status: Optional[str] = Field(None, pattern="^(draft|active|paused|completed)$")
+    status: Optional[str] = Field(None, pattern="^(draft|active|paused|completed|inactive)$")
 
 
 class InfluencerStageCounts(BaseModel):
@@ -57,7 +57,7 @@ class CampaignResponse(BaseModel):
     budget_max: Optional[float] = None
     keywords: List[str] = []
     requirements: Optional[str] = None
-    status: str = "draft"
+    status: str = "active"  # Campaigns are active by default
     created_at: Union[datetime, str]
     updated_at: Union[datetime, str]
     matched_influencers_count: int = 0
@@ -89,11 +89,14 @@ class InfluencerMatch(BaseModel):
     influencer_id: str
     username: str
     full_name: Optional[str] = ""
-    relevance_score: float = Field(..., ge=0, le=100)
+    relevance_score: float = Field(default=50.0, ge=0, le=100)
     matching_keywords: List[str] = []
     channel_stats: Optional[ChannelStats] = None
     ai_analysis: Optional[str] = None
-    status: str = "suggested"
+    status: str = "suggested"  # invited, accepted, in_progress, completed, rejected
+    notes: Optional[str] = None
+    added_at: Optional[str] = None
+    post_url: Optional[str] = None  # URL to completed post
 
 
 class CampaignInfluencersResponse(BaseModel):

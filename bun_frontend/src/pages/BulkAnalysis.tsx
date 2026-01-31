@@ -149,34 +149,36 @@ const BulkAnalysis: React.FC = () => {
             />
           </div>
 
-          {/* Number of Videos Input */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Input
-                type="number"
-                placeholder="Number of videos to analyze"
-                value={numVideos}
-                onChange={(e) => setNumVideos(Math.max(1, parseInt(e.target.value) || 10))}
-                min="1"
-                max="100"
-                onKeyDown={handleKeyDown}
-                className="h-12 rounded-xl
-                           bg-white/10 border-white/20
-                           text-white placeholder:text-gray-400
-                           focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                           transition-all px-4"
-              />
+          {/* Number of Videos Selector */}
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-center w-full">
+            <div className="flex items-center gap-4 bg-slate-800/80 backdrop-blur-sm border border-white/20 rounded-2xl px-5 py-3 shadow-xl">
+              <span className="text-base text-white font-semibold whitespace-nowrap">Videos:</span>
+              <div className="flex items-center gap-2">
+                {[5, 10, 15, 20, 25].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setNumVideos(num)}
+                    className={`w-12 h-12 rounded-xl font-bold text-base transition-all duration-200 cursor-pointer
+                      ${numVideos === num
+                        ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/40 scale-105 border-2 border-blue-400'
+                        : 'bg-slate-700/80 text-gray-300 hover:bg-slate-600 hover:text-white border border-slate-600 hover:border-blue-400/50 hover:scale-105'
+                      }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Button
               onClick={handleSearch}
               disabled={loading || !channelId.trim() || numVideos <= 0}
-              className="h-12 px-6 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 rounded-xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-14 px-10 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-xl shadow-xl shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-bold text-base"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                "Analyze"
+                "Analyze Channel"
               )}
             </Button>
           </div>
@@ -232,7 +234,7 @@ const BulkAnalysis: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6"
+              className="rounded-2xl border border-white/20 bg-slate-900/95 backdrop-blur-xl p-6 shadow-2xl"
             >
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-lg font-semibold text-white">Analysis Results</h2>
@@ -317,6 +319,13 @@ const BulkAnalysis: React.FC = () => {
                           ? ((video.like_count + video.comment_count) / video.view_count * 100).toFixed(2)
                           : "0.00";
 
+                        // Smart number formatting
+                        const formatCount = (num: number) => {
+                          if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+                          if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+                          return num.toLocaleString();
+                        };
+
                         return (
                           <motion.tr
                             key={video.video_id}
@@ -336,17 +345,21 @@ const BulkAnalysis: React.FC = () => {
                                 {video.title}
                               </a>
                             </td>
-                            <td className="px-4 py-3">{(video.view_count / 1000000).toFixed(2)}M</td>
-                            <td className="px-4 py-3 text-red-400 font-semibold">{video.like_count.toLocaleString()}</td>
-                            <td className="px-4 py-3">{video.comment_count.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-cyan-400 font-medium">{formatCount(video.view_count)}</td>
+                            <td className="px-4 py-3 text-red-400 font-semibold">{formatCount(video.like_count)}</td>
+                            <td className="px-4 py-3 text-yellow-400">{formatCount(video.comment_count)}</td>
                             <td className="px-4 py-3 text-green-400 font-semibold">{engagement}%</td>
                             <td className="px-4 py-3">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${video.is_sponsored
-                                  ? 'bg-purple-500/20 text-purple-300'
-                                  : 'bg-gray-500/20 text-gray-300'
-                                }`}>
-                                {video.is_sponsored ? `${video.sponsor_name || 'Sponsored'}` : 'No'}
-                              </span>
+                              {video.is_sponsored ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-200 border border-purple-500/40">
+                                  <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                                  {video.sponsor_name || 'Sponsored'}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-700/50 text-gray-400 border border-slate-600/50">
+                                  —
+                                </span>
+                              )}
                             </td>
                           </motion.tr>
                         );

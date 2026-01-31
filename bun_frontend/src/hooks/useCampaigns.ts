@@ -11,6 +11,7 @@ import {
   deleteCampaign,
   activateCampaign,
   pauseCampaign,
+  inactivateCampaign,
   setSelectedCampaign,
   clearError,
   selectCampaigns,
@@ -69,6 +70,14 @@ export const useCampaigns = () => {
     [dispatch]
   );
 
+  const inactivate = useCallback(
+    (id: string) => {
+      // @ts-ignore
+      return dispatch(inactivateCampaign(id));
+    },
+    [dispatch]
+  );
+
   const selectCampaign = useCallback(
     (campaign: Campaign | null) => {
       dispatch(setSelectedCampaign(campaign));
@@ -93,6 +102,7 @@ export const useCampaigns = () => {
     remove,
     activate,
     pause,
+    inactivate,
     selectCampaign,
     dismissError,
   };

@@ -31,20 +31,21 @@ const InfluencerDiscovery = () => {
     }, [isAuthorized, loadCampaigns]);
 
     useEffect(() => {
-        if (campaignId && campaigns.length > 0) {
+        if (campaignId && campaigns.length > 0 && !selectedCampaignId) {
             const campaign = campaigns.find((c) => c.id === campaignId);
             if (campaign) {
                 selectCampaign(campaign);
                 setSelectedCampaignId(campaign.id);
             }
         }
-    }, [campaignId, campaigns, selectCampaign]);
+    }, [campaignId, campaigns, selectCampaign, selectedCampaignId]);
 
-    const handleSearch = async (niche: string, keywords: string, description: string) => {
+    const handleSearch = async (niche: string, keywords: string, name: string) => {
         await searchImmediate({
             niche,
             keywords,
-            description,
+            description: '', // Legacy param (description removed from UI)
+            name,
             limit: 20,
         });
     };

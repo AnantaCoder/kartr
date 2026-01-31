@@ -83,44 +83,28 @@ const SponsorshipPitchModal: React.FC<SponsorshipPitchModalProps> = ({
         }
     };
 
-    const handleSend = async () => {
-        if (!recipientEmail.trim()) {
-            setError("Recipient email is required.");
-            return;
-        }
-
-        setIsSending(true);
-        setError(null);
-
-        try {
-            await apiClient.post('/influencer/send-pitch', {
-                to_email: recipientEmail,
-                subject: subject,
-                body: body
-            });
-            setStep('success');
-        } catch (err: any) {
-            console.error('Failed to send pitch:', err);
-            setError(err.response?.data?.detail || "Email delivery failed.");
-        } finally {
-            setIsSending(false);
-        }
+    const handleOpenMailClient = () => {
+        const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(mailtoLink, '_blank');
+        setStep('success');
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[600px] bg-[#1a1f2e] border-white/10 text-white max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
+                    {/* ... (Header remains same) ... */}
                     <DialogTitle className="flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-purple-400" />
                         Sponsorship Pitch AI
                     </DialogTitle>
                     <DialogDescription className="text-gray-400">
-                        Generate and send a professional sponsorship pitch{brandName ? <span> to <strong>{brandName}</strong></span> : " to any brand"}.
+                        Generate a professional sponsorship pitch{brandName ? <span> to <strong>{brandName}</strong></span> : " to any brand"}.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-4 space-y-4">
+                    {/* ... (Error display remains) ... */}
                     {error && (
                         <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
                             <AlertCircle className="w-4 h-4" />
@@ -129,6 +113,7 @@ const SponsorshipPitchModal: React.FC<SponsorshipPitchModalProps> = ({
                     )}
 
                     {step === 'generate' && (
+                        // ... (Generate step remains same) ...
                         <div className="space-y-4 text-center py-6">
                             <div className="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-2">
                                 <Sparkles className="w-8 h-8 text-purple-400" />
@@ -169,14 +154,14 @@ const SponsorshipPitchModal: React.FC<SponsorshipPitchModalProps> = ({
                     {step === 'edit' && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                             <div className="space-y-2">
-                                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Recipient Email</label>
+                                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Recipient Email (Optional)</label>
                                 <Input
                                     placeholder="brand-contact@company.com"
                                     value={recipientEmail}
                                     onChange={(e) => setRecipientEmail(e.target.value)}
                                     className="bg-white/5 border-white/10"
                                 />
-                                <p className="text-[10px] text-gray-500 italic">Pro-tip: Use an official brand email for better results.</p>
+                                <p className="text-[10px] text-gray-500 italic">This will be pre-filled in your email client.</p>
                             </div>
 
                             <div className="space-y-2">
@@ -204,11 +189,11 @@ const SponsorshipPitchModal: React.FC<SponsorshipPitchModalProps> = ({
                     {step === 'success' && (
                         <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 animate-in zoom-in-95">
                             <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center text-green-500 mb-2">
-                                <CheckCircle2 className="w-12 h-12" />
+                                <Send className="w-10 h-10" />
                             </div>
-                            <h3 className="text-2xl font-bold">Pitch Sent!</h3>
+                            <h3 className="text-2xl font-bold">Email App Opened!</h3>
                             <p className="text-gray-400 max-w-xs">
-                                Your sponsorship proposal has been delivered to <strong>{recipientEmail}</strong> via Resend.
+                                We've opened your default email client with the pitch pre-filled. Good luck!
                             </p>
                             <Button variant="outline" onClick={onClose} className="border-white/10 hover:bg-white/10">
                                 Close Window
@@ -222,18 +207,9 @@ const SponsorshipPitchModal: React.FC<SponsorshipPitchModalProps> = ({
                         <Button variant="outline" onClick={() => setStep('generate')} className="border-white/10 hover:bg-white/10">
                             Regenerate
                         </Button>
-                        <Button onClick={handleSend} disabled={isSending} className="bg-blue-600 hover:bg-blue-700">
-                            {isSending ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Sending...
-                                </>
-                            ) : (
-                                <>
-                                    <Send className="w-4 h-4 mr-2" />
-                                    Send via Resend
-                                </>
-                            )}
+                        <Button onClick={handleOpenMailClient} className="bg-blue-600 hover:bg-blue-700">
+                            <Send className="w-4 h-4 mr-2" />
+                            Open Email Client
                         </Button>
                     </DialogFooter>
                 )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Dialog,
     DialogContent,
@@ -8,7 +8,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, Send, Check } from 'lucide-react';
+import { Sparkles, ExternalLink } from 'lucide-react';
 import apiClient from '../../services/apiClient';
 
 interface SponsorOutreachModalProps {
@@ -26,140 +26,62 @@ const SponsorOutreachModal: React.FC<SponsorOutreachModalProps> = ({
     influencerName,
     niche,
     campaignDetails,
-    influencerEmail = 'creator@example.com' // Fallback for demo
 }) => {
-    const [loading, setLoading] = useState(false);
-    const [sending, setSending] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const [subject, setSubject] = useState('');
-    const [body, setBody] = useState('');
-
-    const generateInvitation = async () => {
-        setLoading(true);
-        try {
-            const response = await apiClient.get('/campaigns/generate-invitation', {
-                params: {
-                    influencer_name: influencerName || "Creator",
-                    niche: niche,
-                    details: campaignDetails
-                }
-            });
-            setSubject(response.data.subject);
-            setBody(response.data.body);
-        } catch (error) {
-            console.error('Failed to generate invitation:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const sendInvitation = async () => {
-        setSending(true);
-        try {
-            await apiClient.post('/campaigns/send-invitation', null, {
-                params: {
-                    email: influencerEmail,
-                    subject: subject,
-                    body: body
-                }
-            });
-            setSuccess(true);
-            setTimeout(() => {
-                onClose();
-                setSuccess(false);
-                setSubject('');
-                setBody('');
-            }, 2000);
-        } catch (error) {
-            console.error('Failed to send invitation:', error);
-        } finally {
-            setSending(false);
-        }
+    // Determine channel URL based on name (Mock logic for now, ideally passed in props)
+    const getChannelUrl = (name: string) => {
+        // Simple heuristic for demo purposes
+        const handle = name.replace(/\s+/g, '').toLowerCase();
+        return `https://www.youtube.com/@${handle}`;
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px] bg-gray-900 border-white/10 text-white">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl">
-                        <Sparkles className="w-5 h-5 text-purple-400" />
-                        Professional Outreach: {influencerName}
-                    </DialogTitle>
-                    <DialogDescription className="text-gray-400">
-                        Generate a customized invitation to collaborate with this creator.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="py-6 space-y-4">
-                    {!subject && !loading && (
-                        <div className="text-center py-8 border-2 border-dashed border-white/10 rounded-xl space-y-4">
-                            <p className="text-sm text-gray-400">
-                                Click below to generate a professional invitation draft using AI.
-                            </p>
-                            <Button
-                                onClick={generateInvitation}
-                                className="bg-purple-600 hover:bg-purple-700 text-white"
-                            >
-                                <Sparkles className="w-4 h-4 mr-2" />
-                                Generate with AI
-                            </Button>
-                        </div>
-                    )}
-
-                    {loading && (
-                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                            <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
-                            <p className="text-sm text-gray-400 font-medium">Crafting the perfect invitation...</p>
-                        </div>
-                    )}
-
-                    {subject && !loading && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-400 uppercase">Subject</label>
-                                <input
-                                    value={subject}
-                                    onChange={(e) => setSubject(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm focus:border-purple-500 outline-none"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-400 uppercase">Message Body</label>
-                                <textarea
-                                    value={body}
-                                    onChange={(e) => setBody(e.target.value)}
-                                    rows={10}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm focus:border-purple-500 outline-none resize-none"
-                                />
-                            </div>
-                        </div>
-                    )}
+            <DialogContent className="sm:max-w-[500px] bg-gray-900 border-white/10 text-white p-0 overflow-hidden">
+                <div className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 p-6 border-b border-white/10">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl text-white">
+                            <Sparkles className="w-5 h-5 text-purple-400" />
+                            Connect with {influencerName}
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-400">
+                            Professional outreach for {niche} creators.
+                        </DialogDescription>
+                    </DialogHeader>
                 </div>
 
-                <DialogFooter>
-                    <Button
-                        variant="ghost"
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white"
-                    >
-                        Cancel
-                    </Button>
-                    {subject && (
+                <div className="p-6 space-y-6">
+                    <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                            <span className="text-3xl font-bold text-white">{influencerName.charAt(0)}</span>
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-white">{influencerName}</h3>
+                            <p className="text-sm text-gray-400">Ready to collaborate on your campaign</p>
+                        </div>
+
+                        <div className="p-4 bg-white/5 rounded-xl border border-white/10 w-full text-left">
+                            <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Campaign Context</h4>
+                            <p className="text-sm text-gray-300 line-clamp-2">{campaignDetails}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
                         <Button
-                            onClick={sendInvitation}
-                            disabled={sending || success}
-                            className={`${success ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'} text-white min-w-[120px]`}
+                            variant="outline"
+                            onClick={onClose}
+                            className="w-full bg-transparent border-white/10 text-gray-400 hover:text-white hover:bg-white/5"
                         >
-                            {sending ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : success ? (
-                                <><Check className="w-4 h-4 mr-2" /> Sent!</>
-                            ) : (
-                                <><Send className="w-4 h-4 mr-2" /> Send Invitation</>
-                            )}
+                            Cancel
                         </Button>
-                    )}
-                </DialogFooter>
+                        <Button
+                            onClick={() => window.open(getChannelUrl(influencerName), '_blank')}
+                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0"
+                        >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Visit Channel
+                        </Button>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     );

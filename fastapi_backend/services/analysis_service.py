@@ -298,6 +298,165 @@ def generate_sponsor_invitation(niche: str, campaign_details: str, influencer_na
         return fallback_invitation
 
 
+def analyze_video_sponsors_ai(videos: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Use AI to analyze video descriptions and extract sponsor information.
+    This provides more accurate sponsor detection than keyword matching alone.
+    Returns videos with enhanced sponsor data including discount codes and URLs.
+    """
+    if not videos:
+        return videos
+    
+    # Prepare video data for AI analysis
+    videos_to_analyze = []
+    for i, video in enumerate(videos):
+        videos_to_analyze.append({
+            "index": i,
+            "title": video.get("title", ""),
+            "description": video.get("description", "")[:800]  # More context
+        })
+    
+    if not videos_to_analyze:
+        return videos
+    
+    # Create comprehensive prompt for AI
+    prompt = """You are an expert at identifying brand sponsorships in YouTube video descriptions.
+
+Analyze these video descriptions CAREFULLY and extract ALL sponsorship information.
+
+WHAT TO LOOK FOR:
+1. **Direct Sponsor Mentions**: "Sponsored by", "Thanks to", "Brought to you by", "Partnered with"
+2. **Discount/Promo Codes**: "Use code CREATOR for 20% off", "Get 50% off at brand.com/channel"
+3. **Affiliate Links**: URLs containing brand names (e.g., nordvpn.com/creator, squarespace.com/name)
+4. **Hashtags**: #ad, #sponsored, #partner, #brandpartner
+5. **Paid Promotion Disclaimers**: "This video includes paid promotion", "Includes paid partnership"
+6. **Product Mentions with Links**: When products are mentioned alongside promotional links
+
+COMMON YOUTUBE SPONSORS TO RECOGNIZE:
+- VPNs: NordVPN, ExpressVPN, Surfshark, Private Internet Access
+- Tech: Squarespace, Wix, Skillshare, Brilliant, Audible
+- Gaming: Raid Shadow Legends, World of Warships, Opera GX
+- Lifestyle: HelloFresh, Manscaped, Raycon, Ridge Wallet, Casetify
+- Finance: Honey, Established Titles
+- Health: BetterHelp, Hims, Keeps
+
+VIDEOS TO ANALYZE:
+"""
+    
+    for v in videos_to_analyze:
+        prompt += f"""
+---
+[VIDEO {v['index']}]
+Title: {v['title']}
+Description: {v['description']}
+"""
+    
+    prompt += """
+---
+
+OUTPUT FORMAT - Return a JSON array:
+```json
+[
+  {
+    "index": 0,
+    "is_sponsored": true,
+    "sponsor_name": "NordVPN",
+    "discount_code": "CREATOR20",
+    "sponsor_url": "nordvpn.com/creator",
+    "confidence": "high"
+  },
+  {
+    "index": 1,
+    "is_sponsored": false,
+    "sponsor_name": null,
+    "discount_code": null,
+    "sponsor_url": null,
+    "confidence": "high"
+  }
+]
+```
+
+RULES:
+- Return ONLY the JSON array, no other text
+- sponsor_name must be the ACTUAL BRAND NAME properly capitalized (e.g., "NordVPN" not "nordvpn")
+- Extract discount_code if mentioned (e.g., "CREATOR20", "SAVE50")
+- Extract sponsor_url if a promotional link is provided
+- Set confidence to "high" if there's a clear sponsor mention, "medium" if implied, "low" if uncertain
+- If NO sponsorship detected, set is_sponsored to false and other fields to null
+"""
+    
+    try:
+        response_text, model_used = _generate_with_fallback(prompt)
+        
+        if not response_text:
+            logger.warning("AI sponsor analysis returned no response")
+            return videos
+        
+        # Parse the response
+        try:
+            # Clean up response - handle various formats
+            text = response_text.strip()
+            
+            # Remove markdown code blocks
+            if "```json" in text:
+                start = text.find("```json") + 7
+                end = text.find("```", start)
+                text = text[start:end] if end > start else text[start:]
+            elif "```" in text:
+                start = text.find("```") + 3
+                end = text.find("```", start)
+                text = text[start:end] if end > start else text[start:]
+            
+            # Try to find JSON array
+            text = text.strip()
+            if not text.startswith("["):
+                # Try to find array in response
+                start = text.find("[")
+                end = text.rfind("]") + 1
+                if start >= 0 and end > start:
+                    text = text[start:end]
+            
+            sponsor_results = json.loads(text)
+            
+            # Update videos with AI analysis
+            for result in sponsor_results:
+                idx = result.get("index")
+                if idx is not None and 0 <= idx < len(videos):
+                    if result.get("is_sponsored"):
+                        videos[idx]["is_sponsored"] = True
+                        
+                        # Get sponsor name
+                        sponsor = result.get("sponsor_name")
+                        if sponsor and sponsor.lower() != "null":
+                            videos[idx]["sponsor_name"] = sponsor
+                        elif not videos[idx].get("sponsor_name"):
+                            videos[idx]["sponsor_name"] = "Sponsored"
+                        
+                        # Add extra sponsor details if available
+                        if result.get("discount_code") and result["discount_code"].lower() != "null":
+                            videos[idx]["discount_code"] = result["discount_code"]
+                        if result.get("sponsor_url") and result["sponsor_url"].lower() != "null":
+                            videos[idx]["sponsor_url"] = result["sponsor_url"]
+                        if result.get("confidence"):
+                            videos[idx]["sponsor_confidence"] = result["confidence"]
+                    else:
+                        # Only override if keyword detection didn't find anything
+                        if not videos[idx].get("is_sponsored"):
+                            videos[idx]["is_sponsored"] = False
+                            videos[idx]["sponsor_name"] = None
+                        
+            logger.info(f"AI sponsor analysis completed using {model_used} for {len(videos)} videos")
+            
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse AI sponsor response: {e}")
+            logger.debug(f"Response was: {response_text[:500]}")
+            
+    except Exception as e:
+        logger.error(f"AI sponsor analysis failed: {e}")
+    
+    return videos
+
+
 def _parse_recommendations(text: str) -> List[Dict[str, Any]]:
     """Parse recommendations from LLM response."""
     try:

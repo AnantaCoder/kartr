@@ -105,6 +105,14 @@ export const pauseCampaign = async (campaignId: string): Promise<Campaign> => {
 };
 
 /**
+ * Mark a campaign as inactive
+ */
+export const inactivateCampaign = async (campaignId: string): Promise<Campaign> => {
+  const response = await apiClient.post(`${CAMPAIGNS_BASE}/${campaignId}/inactivate`);
+  return response.data;
+};
+
+/**
  * Mark a campaign as completed
  */
 export const completeCampaign = async (campaignId: string): Promise<Campaign> => {
@@ -116,7 +124,40 @@ export const completeCampaign = async (campaignId: string): Promise<Campaign> =>
  * Get invitations for the current influencer
  */
 export const getInfluencerInvitations = async (): Promise<{ invitations: any[]; count: number }> => {
-  const response = await apiClient.get(`${CAMPAIGNS_BASE}/invitations`);
+  // Use the dedicated influencer endpoint
+  const response = await apiClient.get('/influencer/invitations');
+  // Backend returns a list directly, so wrap it to match expected interface if needed, 
+  // or update the return type. 
+  // Py backend: returns lists of dicts. 
+  // Let's assume it returns { invitations: [...] } or just [...]
+  // Reading `mock_db` or logic: `CampaignService.get_influencer_invitations` returns `results` (list).
+  // So response.data is the list.
+  return { invitations: response.data, count: response.data.length };
+};
+
+/**
+ * Respond to an invitation (accept/reject)
+ */
+export const respondToInvitation = async (
+  campaignId: string,
+  accept: boolean
+): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.post(`/influencer/campaigns/${campaignId}/respond`, {
+    accept,
+  });
+  return response.data;
+};
+
+/**
+ * Update campaign working status
+ */
+export const updateCampaignStatus = async (
+  campaignId: string,
+  status: 'in_progress' | 'completed' | 'cancelled'
+): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.post(`/influencer/campaigns/${campaignId}/status`, {
+    status,
+  });
   return response.data;
 };
 
@@ -131,5 +172,8 @@ export default {
   activateCampaign,
   pauseCampaign,
   completeCampaign,
+  inactivateCampaign,
   getInfluencerInvitations,
+  respondToInvitation,
+  updateCampaignStatus,
 };

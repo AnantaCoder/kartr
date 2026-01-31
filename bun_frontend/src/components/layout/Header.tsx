@@ -15,7 +15,6 @@ const navItems = [
   { label: "Bulk Analysis", href: "/BulkAnalysis" },
   { label: "Virtual AI", href: "/VirtualAi" },
   { label: "Enable Auto Posting", href: "/auto-posting" },
-  { label: "My Campaigns", href: "/sponsor/campaigns/campaign_400cbdc66d28" },
 ];
 
 interface HeaderProps {
@@ -48,6 +47,12 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
     if (user?.user_type === 'admin') return '/admin';
     return '/';
   };
+
+  // Dynamic nav items
+  const displayNavItems = [...navItems];
+  if (isAuthenticated && user) {
+    displayNavItems.push({ label: "Dashboard", href: getDashboardRoute() });
+  }
 
   const handleLogout = () => {
     dispatch(logout());
@@ -108,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
             {/* CENTER NAV — DESKTOP ONLY (lg+) */}
             <nav className="hidden lg:flex items-center">
               <div className="flex items-center gap-1 rounded-full bg-secondary/50 backdrop-blur-md p-1.5 border border-border">
-                {navItems.map((item) => {
+                {displayNavItems.map((item) => {
                   const isActive = location.pathname === item.href;
                   return (
                     <Link
@@ -174,13 +179,6 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
 
                           {/* Menu Items */}
                           <div className="p-2">
-                            <Link
-                              to={getDashboardRoute()}
-                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-foreground hover:bg-secondary transition-colors"
-                            >
-                              <LayoutDashboard className="w-4 h-4" />
-                              <span className="text-sm">Dashboard</span>
-                            </Link>
                             <Link
                               to={getProfileRoute()}
                               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-foreground hover:bg-secondary transition-colors"
@@ -259,7 +257,7 @@ const Header: React.FC<HeaderProps> = ({ bgClass }) => {
               <div className="bg-background/98 backdrop-blur-xl border-t border-border px-4 sm:px-6 py-6 space-y-4">
                 {/* Nav Items */}
                 <div className="flex flex-col gap-1">
-                  {navItems.map((item, index) => {
+                  {displayNavItems.map((item, index) => {
                     const isActive = location.pathname === item.href;
                     return (
                       <motion.div
