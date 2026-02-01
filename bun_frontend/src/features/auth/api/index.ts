@@ -1,4 +1,5 @@
 import apiClient from "../../../services/apiClient";
+import { signInWithGoogle } from "../../../config/firebase";
 import type {
   User,
   AuthResponse,
@@ -51,5 +52,14 @@ export const logoutUser = async (): Promise<void> => {
 
 export const updateUserProfile = async (data: Partial<User>): Promise<User> => {
   const response = await apiClient.put<User>("/auth/profile", data);
+  return response.data;
+};
+
+export const googleLogin = async (userType: string = "influencer"): Promise<AuthResponse> => {
+  const idToken = await signInWithGoogle();
+  const response = await apiClient.post<AuthResponse>("/auth/google", {
+    id_token: idToken,
+    user_type: userType,
+  });
   return response.data;
 };

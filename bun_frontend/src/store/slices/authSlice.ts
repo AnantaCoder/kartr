@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { User, AuthState, LoginCredentials, SignupInfluencerData, SignupSponsorData } from "../../features/auth/types";
-import { loginUser, signupInfluencer, signupSponsor, getCurrentUser, logoutUser } from "../../features/auth/api";
+import { loginUser, signupInfluencer, signupSponsor, getCurrentUser, logoutUser, googleLogin } from "../../features/auth/api";
 
 const initialState: AuthState = {
   user: null,
@@ -63,6 +63,21 @@ export const logout = createAsyncThunk("auth/logout", async (_, { dispatch }) =>
   localStorage.removeItem("token");
   dispatch(clearAuth());
 });
+
+export const loginWithGoogle = createAsyncThunk(
+  "auth/loginWithGoogle",
+  async (userType: string = "influencer", { rejectWithValue }) => {
+    try {
+      return await googleLogin(userType);
+    } catch (error: any) {
+      // Handle Firebase popup closed error
+      if (error.code === "auth/popup-closed-by-user") {
+        return rejectWithValue("Sign-in cancelled");
+      }
+      return rejectWithValue(error.response?.data?.detail || error.message || "Google sign-in failed");
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: "auth",
@@ -134,7 +149,16 @@ const authSlice = createSlice({
           state.isAuthenticated = false;
           localStorage.removeItem("token");
         }
-      });
+      })
+      .addCase(loginWithGoogle.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(loginWithGoogle.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.access_token;
+        state.isAuthenticated = true;
+        localStorage.setItem("token", action.payload.access_token);
+      })
+      .addCase(loginWithGoogle.rejected, (state, action) => { state.loading = false; state.error = action.payload as string; });
   },
 });
 

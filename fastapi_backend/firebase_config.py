@@ -32,20 +32,69 @@ _firebase_app: Optional[Any] = None
 _firestore_client: Optional[Any] = None
 
 
+def _load_credentials_from_env_vars() -> Optional[Any]:
+    """
+    Load Firebase credentials from individual environment variables.
+    
+    Required env vars:
+    - FIREBASE_PROJECT_ID
+    - FIREBASE_PRIVATE_KEY (with newlines as \\n)
+    - FIREBASE_CLIENT_EMAIL
+    
+    Returns:
+        Firebase credentials object or None if not configured
+    """
+    project_id = os.getenv('FIREBASE_PROJECT_ID', '').strip()
+    private_key = os.getenv('FIREBASE_PRIVATE_KEY', '').strip()
+    client_email = os.getenv('FIREBASE_CLIENT_EMAIL', '').strip()
+    
+    if not all([project_id, private_key, client_email]):
+        return None
+    
+    try:
+        # Handle escaped newlines in private key
+        private_key = private_key.replace('\\n', '\n')
+        
+        creds_dict = {
+            "type": "service_account",
+            "project_id": project_id,
+            "private_key": private_key,
+            "client_email": client_email,
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+        
+        # Optional additional fields
+        if os.getenv('FIREBASE_PRIVATE_KEY_ID'):
+            creds_dict["private_key_id"] = os.getenv('FIREBASE_PRIVATE_KEY_ID')
+        if os.getenv('FIREBASE_CLIENT_ID'):
+            creds_dict["client_id"] = os.getenv('FIREBASE_CLIENT_ID')
+        
+        logger.info("Loading Firebase credentials from individual environment variables")
+        return credentials.Certificate(creds_dict)
+    except Exception as e:
+        logger.error(f"Failed to create credentials from env vars: {e}")
+        return None
+
+
 def _load_credentials_from_env() -> Optional[Any]:
     """
     Load Firebase credentials from environment.
     
-    Supports two formats:
-    1. Path to a JSON service account file
-    2. JSON string containing service account credentials
-    
-    Also auto-detects common Firebase credential files as fallback.
+    Supports multiple formats (checked in order):
+    1. Individual environment variables (FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL)
+    2. JSON string in FIREBASE_CREDENTIALS env var
+    3. Path to a JSON service account file in FIREBASE_CREDENTIALS
+    4. Auto-detect common Firebase credential files as fallback
     
     Returns:
         Firebase credentials object or None if not configured
     """
     from config import settings
+    
+    # First, try individual environment variables (preferred for deployment)
+    env_creds = _load_credentials_from_env_vars()
+    if env_creds:
+        return env_creds
     
     creds_value = getattr(settings, 'FIREBASE_CREDENTIALS', '').strip()
     
