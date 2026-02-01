@@ -69,7 +69,8 @@ async def create_conversation(
     """
     success, conversation, error = ChatService.create_conversation(
         user_id=str(current_user["id"]),
-        title=request.title
+        title=request.title,
+        mode=request.mode
     )
     
     if not success:

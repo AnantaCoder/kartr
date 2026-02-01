@@ -42,7 +42,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/auto-posting" element={<AutoPosting />} />
             <Route path="/VirtualAi" element={<VirtualAi />} />
             <Route path="/BulkAnalysis" element={<BulkAnalysis />} />
-            <Route path="/innovation-lab" element={<MvpShowcase />} />
+            {/* <Route path="/innovation-lab" element={<MvpShowcase />} /> */}
             <Route path="/ad-studio" element={<AdStudio />} />
             <Route path="/sponsor/campaigns/:campaignId" element={<CampaignDetail />} />
 

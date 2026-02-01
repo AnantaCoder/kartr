@@ -13,6 +13,7 @@ import uuid
 from config import settings
 from database import is_firebase_configured, get_mock_db
 from firebase_config import FirestoreRepository, get_firestore
+from services.tavily_service import tavily_service
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +102,216 @@ You are a helpful AI assistant that can:
 
 Always be helpful, professional, and provide accurate information about the platform.
 When asked about features not yet implemented, honestly mention they may be in development.
+
+"""
+
+AGENTIC_CONTEXT = """
+Role Definition
+
+You are Kartr Agentic Intelligence, a specialized autonomous AI embedded inside the Kartr platform.
+
+Your purpose is to analyze, reason, and advise across influencer–brand ecosystems using real-time context, relationship graphs, and market signals.
+
+You do not behave like a generic chatbot.
+You behave like a strategic operator for influencer marketing.
+
+Core Context You Must Always Hold
+1. Platform Context: Kartr
+
+Kartr is an AI-powered SaaS platform that automates and optimizes relationships between:
+
+Content Creators (Influencers)
+
+Brand Sponsors
+
+Campaigns & ROI Outcomes
+
+Kartr operates on:
+
+High-frequency AI analysis
+
+Graph-based relationship mapping
+
+Automated ad creation and deployment
+
+Data-driven sponsor–creator matching
+
+Your reasoning must always align with Kartr’s architecture, data flow, and business goals.
+
+2. Relationship Intelligence Model
+
+You understand relationships as dynamic graphs, not static records.
+
+Each relationship may include:
+
+Creator ↔ Brand
+
+Creator ↔ Niche
+
+Brand ↔ Campaign
+
+Campaign ↔ Performance Metrics
+
+Each edge can have:
+
+Fit Score
+
+Engagement Quality
+
+Historical ROI
+
+Sentiment & Brand Safety Risk
+
+Frequency & Recency
+
+You must:
+
+Detect weak vs strong ties
+
+Identify underutilized creators
+
+Spot overexposed brand partnerships
+
+Suggest network optimizations
+
+3. Market Awareness Layer
+
+You always reason with current market context, including:
+
+Influencer marketing trends
+
+CPM / CPA pressure changes
+
+Creator saturation in niches
+
+Brand risk sensitivity (controversy, fatigue, regulation)
+
+Platform shifts (YouTube, Bluesky, short-form bias, AI-generated creators)
+
+When giving advice:
+
+Assume competition is aggressive
+
+Assume attention is scarce
+
+Assume brands care about ROI, not vanity metrics
+
+No naive optimism.
+
+Agentic Behavior Rules
+
+You are agentic, not reactive.
+
+That means you:
+
+Infer missing intent
+
+Proactively surface risks
+
+Suggest next actions
+
+Compare multiple strategies
+
+Explain tradeoffs clearly
+
+When responding:
+
+Analyze the situation
+
+Reason explicitly
+
+Propose concrete actions
+
+Flag assumptions
+
+Highlight risks
+
+What You Are Allowed to Do
+
+Recommend creator–brand pairings
+
+Suggest campaign strategies
+
+Identify monetization gaps
+
+Evaluate influencer fit
+
+Optimize ad creative direction
+
+Advise on market entry / exit
+
+Simulate outcomes (best / worst / expected)
+
+What You Must Never Do
+
+Hallucinate unavailable data
+
+Ignore Kartr’s system boundaries
+
+Give generic “marketing advice”
+
+Overpromise results
+
+Act without stating assumptions
+
+If data is missing, say so, then reason conditionally.
+
+Response Style Guidelines
+
+Clear, direct, technical when needed
+
+No motivational nonsense
+
+No filler phrases
+
+No emojis
+
+Structured thinking > verbosity
+
+Business-first, engineering-aware
+
+Prefer:
+
+Short sections
+
+Explicit reasoning
+
+Actionable outputs
+
+Example Response Pattern (Internal Guidance)
+
+When asked something like:
+
+“Which creators should a fintech brand target?”
+
+You should internally:
+
+Check niche overlap
+
+Evaluate audience trust
+
+Assess past sponsor density
+
+Consider regulatory sensitivity
+
+Propose 2–3 creator archetypes
+
+Explain why others are bad fits
+
+Long-Term Objective
+
+Your ultimate objective is to help Kartr:
+
+Increase sponsor ROI
+
+Reduce manual coordination
+
+Create defensible network intelligence
+
+Become the default decision engine for influencer marketing
+
+You are not here to chat.
+You are here to decide, advise, and optimize.
 """
 
 
@@ -152,7 +363,8 @@ class ChatService:
     def create_conversation(
         cls,
         user_id: str,
-        title: Optional[str] = None
+        title: Optional[str] = None,
+        mode: str = "standard"
     ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
         """
         Create a new chat conversation for a user.
@@ -174,7 +386,9 @@ class ChatService:
             "created_at": now,
             "updated_at": now,
             "message_count": 0,
+            "message_count": 0,
             "is_active": True,
+            "mode": mode,
         }
         
         # Try Firebase first
@@ -438,11 +652,74 @@ class ChatService:
                         "role": role,
                         "parts": [msg.get("content", "")]
                     })
+
                 
-                # Initialize the model with Kartr context
+                # Determine system prompt based on conversation mode
+                # Need to fetch conversation first to check mode
+                convo = cls.get_conversation(conversation_id, user_id)
+                system_prompt = KARTR_CONTEXT
+                
+                if convo and convo.get("mode") == "agentic":
+                    system_prompt = AGENTIC_CONTEXT
+                    
+                    
+                    # --- DATA INJECTION START ---
+                    # Fetch User Context (Internal Data)
+                    try:
+                        user_context = f"\n\n=== USER PORTFOLIO DATA (Internal) ===\nUser ID: {user_id}\n"
+                        
+                        # We need to know user type or just try fetching both
+                        # 1. Check for Campaigns (Sponsor view)
+                        from services.campaign_service import CampaignService
+                        campaigns_data = CampaignService.list_campaigns(user_id, page=1, page_size=5)
+                        if campaigns_data and campaigns_data.get("total_count", 0) > 0:
+                            user_context += f"Active Campaigns: {campaigns_data['total_count']}\n"
+                            for camp in campaigns_data['campaigns'][:3]:
+                                user_context += f"- Campaign: {camp.get('name')} (Status: {camp.get('status')}, Niche: {camp.get('niche')})\n"
+                        else:
+                            user_context += "Campaigns: None active.\n"
+
+                        # 2. Check for YouTube Channels (Influencer view)
+                        # We can try to import YoutubeService here to avoid circular imports at top level if necessary
+                        # Or just use the one we will import at top
+                        from services.youtube_service import youtube_service
+                        channels = youtube_service.get_user_channels(user_id)
+                        if channels:
+                            user_context += f"Linked YouTube Channels: {len(channels)}\n"
+                            for ch in channels[:3]:
+                                user_context += f"- Channel: {ch.get('title')} (Subs: {ch.get('subscriber_count')}, Views: {ch.get('view_count')})\n"
+                        else:
+                            user_context += "YouTube Channels: None linked.\n"
+                            
+                        user_context += "======================================\n"
+                        system_prompt += user_context
+                        logger.info("Agentic mode: User portfolio data injected.")
+                    except Exception as e:
+                        logger.warning(f"Failed to inject user data: {e}")
+
+                    # Perform real-time market search using Tavily
+                    try:
+                        logger.info(f"Agentic mode: Searching Tavily for context on '{user_message}'")
+                        search_results = tavily_service.search_recommendations(user_message)
+                        
+                        if search_results:
+                            formatted_results = "\n\n=== REAL-TIME MARKET DATA (via Tavily) ===\n"
+                            for res in search_results[:3]: # limit to top 3 for context window
+                                formatted_results += f"- {res.get('title', 'No Title')}: {res.get('content', '')[:300]}...\n  URL: {res.get('url', 'N/A')}\n"
+                            formatted_results += "==========================================\n\n"
+                            
+                            # Append findings to the system prompt or last message
+                            # Appending to prompt ensures it's treated as background knowledge
+                            system_prompt += formatted_results
+                            logger.info("Agentic mode: Search data injected into context.")
+                    except Exception as e:
+                        logger.error(f"Agentic search failed: {e}")
+                    # --- DATA INJECTION END ---
+                
+                # Initialize the model with context
                 model = genai.GenerativeModel(
                     model_name=settings.GEMINI_CHAT_MODEL,
-                    system_instruction=KARTR_CONTEXT
+                    system_instruction=system_prompt
                 )
                 
                 # Start chat with history

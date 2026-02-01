@@ -61,6 +61,15 @@ export const fetchCurrentUser = createAsyncThunk(
 export const logout = createAsyncThunk("auth/logout", async (_, { dispatch }) => {
   await logoutUser();
   localStorage.removeItem("token");
+  // Clean up persisted Virtual AI state
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith("virtual_ai_tab_") || key.startsWith("agentic_chat_"))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
   dispatch(clearAuth());
 });
 

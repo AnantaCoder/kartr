@@ -25,11 +25,13 @@ class ChatConversation(BaseModel):
     updated_at: str
     message_count: int = 0
     is_active: bool = True
+    mode: str = "standard"  # "standard" or "agentic"
 
 
 class CreateConversationRequest(BaseModel):
     """Request to create a new conversation"""
     title: Optional[str] = Field(default=None, max_length=255)
+    mode: str = Field(default="standard", pattern="^(standard|agentic)$")
 
 
 class CreateConversationResponse(BaseModel):

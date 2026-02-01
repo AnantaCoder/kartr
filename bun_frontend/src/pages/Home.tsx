@@ -116,7 +116,7 @@ const Home: React.FC = () => {
                             : "Discover top-tier creators with audited engagement, brand-safety scores, and predictive ROI models powered by Kartr AI."
                         }
                     </motion.p>
-
+                    
                     {/* CTA Buttons */}
                     <motion.div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <Link to={isCreator ? "/signup-influencer" : "/signup-sponsor"}>
@@ -125,7 +125,7 @@ const Home: React.FC = () => {
                                 <ArrowRight className="w-5 h-5 ml-2" />
                             </Button>
                         </Link>
-                        <Link to="/innovation-lab">
+                        <Link to="/VirtualAi">
                             <Button variant="outline" size="lg" className="h-16 px-10 text-lg rounded-2xl font-bold border-white/10 bg-white/5 hover:bg-white/10 text-white">
                                 <Cpu className="w-5 h-5 mr-2 text-purple-400" />
                                 Explore Innovation Lab
@@ -251,7 +251,7 @@ const Home: React.FC = () => {
                         <p className="text-gray-400 text-lg mb-10 leading-relaxed max-w-lg">
                             Go beyond basic analytics. Tap into our lab features to experience how Large Language Models like Llama 3.3 and Gemini are redefining product-market fit.
                         </p>
-                        <Link to="/innovation-lab">
+                        <Link to="/VirtualAi">
                             <Button variant="outline" className="h-14 px-8 rounded-xl border-purple-500/30 text-purple-400 hover:bg-purple-500/10 transition-all font-bold group">
                                 Enter the Lab
                                 <Sparkles className="w-4 h-4 ml-2 group-hover:rotate-12 transition-transform" />
