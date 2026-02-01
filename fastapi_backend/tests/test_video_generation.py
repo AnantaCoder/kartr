@@ -27,7 +27,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Models
 STORYBOARD_MODEL = "gemini-2.5-flash"
-VEO_MODEL = "veo-2.0-generate-001"  # Stable model
+VEO_MODEL = settings.GEMINI_VIDEO_MODEL  # Stable model
 
 # Prompts
 STORYBOARD_PROMPT = """

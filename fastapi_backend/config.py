@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     GEMINI_TEXT_MODEL: str = "gemini-2.0-flash"  # For text generation, analysis, Q&A
     GEMINI_CHAT_MODEL: str = "gemini-2.0-flash"  # For chat conversations
     GEMINI_IMAGE_MODEL: str = "gemini-2.0-flash"  # For image generation
+    GEMINI_VIDEO_MODEL: str = "veo-2.0-generate-001"  # For video generation
     
     # Grok API (xAI) - Fallback
     GROK_API_KEY: str = ""

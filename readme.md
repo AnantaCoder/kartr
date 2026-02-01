@@ -121,7 +121,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact & Support
 
-- **Founder**: Kiran Chawan ([kiransc55@gmail.com](mailto:kiransc55@gmail.com))
-- **AI Engineer**: Anirban Sarkar
+- **Mentor**: Kiran Chawan ([kiransc55@gmail.com](mailto:kiransc55@gmail.com))
+- **AI Engineer**: Anirban Sarkar , Aditi Kapoor , Raghav , Karan
 - **Location**: Indira Nagar, Bengaluru, India
 - **Website**: [kartr.ai](http://kartr.ai) (Coming Soon)
