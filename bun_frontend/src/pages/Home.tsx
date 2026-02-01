@@ -99,7 +99,7 @@ const Home: React.FC = () => {
                             </>
                         ) : (
                             <>
-                                Data-Driven <br />
+                                Revolutionizing  <br />
                                 <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">Partner Discovery.</span>
                             </>
                         )}

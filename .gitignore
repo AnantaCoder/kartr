@@ -13,6 +13,8 @@ __pycache__/
 dist/
 build/
 .env
+.env.*
+.env.example
 .env.local
 *.log
 .DS_Store
