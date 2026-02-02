@@ -298,74 +298,117 @@ const BulkAnalysis: React.FC = () => {
                 )}
               </div>
 
-              {/* Videos Table */}
+              {/* Videos Grid */}
               <div>
-                <h3 className="text-base font-semibold text-white mb-4">Videos Analyzed</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left text-gray-300">
-                    <thead className="text-xs uppercase bg-white/5 text-gray-200">
-                      <tr>
-                        <th scope="col" className="px-4 py-3 font-semibold">Title</th>
-                        <th scope="col" className="px-4 py-3 font-semibold">Views</th>
-                        <th scope="col" className="px-4 py-3 font-semibold">Likes</th>
-                        <th scope="col" className="px-4 py-3 font-semibold">Comments</th>
-                        <th scope="col" className="px-4 py-3 font-semibold">Engagement</th>
-                        <th scope="col" className="px-4 py-3 font-semibold">Sponsored</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {videos.map((video, index) => {
-                        const engagement = video.view_count > 0
-                          ? ((video.like_count + video.comment_count) / video.view_count * 100).toFixed(2)
-                          : "0.00";
+                <h3 className="text-base font-semibold text-white mb-6">Videos Analyzed ({videos.length})</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {videos.map((video, index) => {
+                    const engagement = video.view_count > 0
+                      ? ((video.like_count + video.comment_count) / video.view_count * 100).toFixed(2)
+                      : "0.00";
 
-                        // Smart number formatting
-                        const formatCount = (num: number) => {
-                          if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-                          if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-                          return num.toLocaleString();
-                        };
+                    // Smart number formatting
+                    const formatCount = (num: number) => {
+                      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+                      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+                      return num.toLocaleString();
+                    };
 
-                        return (
-                          <motion.tr
-                            key={video.video_id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                    return (
+                      <motion.div
+                        key={video.video_id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group relative rounded-xl overflow-hidden bg-slate-800/50 border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20"
+                      >
+                        {/* Video Embed Container */}
+                        <div className="relative w-full aspect-video bg-black overflow-hidden group-hover:opacity-90 transition-opacity">
+                          <iframe
+                            width="100%"
+                            height="100%"
+                            src={`https://www.youtube.com/embed/${video.video_id}?modestbranding=1&controls=1`}
+                            title={video.title}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="w-full h-full"
+                          />
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="p-4 space-y-3">
+                          {/* Sponsor Badge - PROMINENT */}
+                          {video.is_sponsored && (
+                            <div className="w-full">
+                              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-600/30 to-pink-600/30 border-2 border-purple-500 shadow-lg shadow-purple-500/20">
+                                <span className="w-3 h-3 rounded-full bg-purple-400 animate-pulse"></span>
+                                <div className="flex flex-col">
+                                  <p className="text-xs text-purple-300 font-semibold uppercase tracking-wide">Sponsored by</p>
+                                  <p className="text-sm font-bold text-purple-100">{video.sponsor_name || 'Brand Sponsor'}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* No Sponsorship Badge - PROMINENT */}
+                          {!video.is_sponsored && (
+                            <div className="w-full">
+                              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-gray-600/30 to-slate-600/30 border-2 border-gray-500 shadow-lg shadow-gray-500/20">
+                                <span className="w-3 h-3 rounded-full bg-gray-400"></span>
+                                <div className="flex flex-col">
+                                  <p className="text-xs text-gray-300 font-semibold uppercase tracking-wide">No Sponsorship</p>
+                                  <p className="text-sm font-bold text-gray-100">Not Sponsored</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Title */}
+                          <a
+                            href={`https://youtube.com/watch?v=${video.video_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block group-hover:text-blue-400 transition-colors"
                           >
-                            <td className="px-4 py-3">
-                              <a
-                                href={`https://youtube.com/watch?v=${video.video_id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-blue-400 hover:text-blue-300 line-clamp-1 max-w-xs"
-                                title={video.title}
-                              >
-                                {video.title}
-                              </a>
-                            </td>
-                            <td className="px-4 py-3 text-cyan-400 font-medium">{formatCount(video.view_count)}</td>
-                            <td className="px-4 py-3 text-red-400 font-semibold">{formatCount(video.like_count)}</td>
-                            <td className="px-4 py-3 text-yellow-400">{formatCount(video.comment_count)}</td>
-                            <td className="px-4 py-3 text-green-400 font-semibold">{engagement}%</td>
-                            <td className="px-4 py-3">
-                              {video.is_sponsored ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-purple-200 border border-purple-500/40">
-                                  <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-                                  {video.sponsor_name || 'Sponsored'}
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-700/50 text-gray-400 border border-slate-600/50">
-                                  —
-                                </span>
-                              )}
-                            </td>
-                          </motion.tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                            <h4 className="text-sm font-semibold text-white line-clamp-2 group-hover:text-blue-300">
+                              {video.title}
+                            </h4>
+                          </a>
+
+                          {/* Stats Grid */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/5 rounded-lg p-2.5 border border-white/10">
+                              <p className="text-xs text-gray-400 mb-1">Views</p>
+                              <p className="text-sm font-bold text-cyan-400">{formatCount(video.view_count)}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-2.5 border border-white/10">
+                              <p className="text-xs text-gray-400 mb-1">Likes</p>
+                              <p className="text-sm font-bold text-red-400">{formatCount(video.like_count)}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-2.5 border border-white/10">
+                              <p className="text-xs text-gray-400 mb-1">Comments</p>
+                              <p className="text-sm font-bold text-yellow-400">{formatCount(video.comment_count)}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-2.5 border border-white/10">
+                              <p className="text-xs text-gray-400 mb-1">Engagement</p>
+                              <p className="text-sm font-bold text-green-400">{engagement}%</p>
+                            </div>
+                          </div>
+
+                          {/* Watch Button */}
+                          <a
+                            href={`https://youtube.com/watch?v=${video.video_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm font-semibold transition-all duration-200 text-center group-hover:shadow-lg group-hover:shadow-blue-500/30 block"
+                          >
+                            Watch Video
+                          </a>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>
