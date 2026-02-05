@@ -94,13 +94,19 @@ const Home: React.FC = () => {
                     >
                         {isCreator ? (
                             <>
-                                Amplify Your <br />
-                                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">Creative Edge.</span>
+                                Amplify your creative edge <br />
+                                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">Influencers and sponsors platform</span>
+                                <div className="block mt-8">
+                                    <span className="text-2xl font-medium text-gray-400">Powered by Gemini</span>
+                                </div>
                             </>
                         ) : (
                             <>
-                                Revolutionizing  <br />
-                                <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">Partner Discovery.</span>
+                                Revolutionising <br />
+                                <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">Influencers and sponsors collaboration platform</span>
+                                <div className="block mt-8">
+                                    <span className="text-2xl font-medium text-gray-400">Powered by Gemini</span>
+                                </div>
                             </>
                         )}
                     </motion.h1>
@@ -116,7 +122,7 @@ const Home: React.FC = () => {
                             : "Discover top-tier creators with audited engagement, brand-safety scores, and predictive ROI models powered by Kartr AI."
                         }
                     </motion.p>
-                    
+
                     {/* CTA Buttons */}
                     <motion.div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <Link to={isCreator ? "/signup-influencer" : "/signup-sponsor"}>
