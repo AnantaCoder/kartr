@@ -97,7 +97,7 @@ const Home: React.FC = () => {
                                 Amplify your creative edge <br />
                                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">Influencers and sponsors platform</span>
                                 <div className="block mt-8">
-                                    <span className="text-2xl font-medium text-gray-400">Powered by Gemini</span>
+                                    <span className="text-2xl font-medium text-gray-400">Powered by Gemini 3</span>
                                 </div>
                             </>
                         ) : (
@@ -105,7 +105,7 @@ const Home: React.FC = () => {
                                 Revolutionising <br />
                                 <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">Influencers and sponsors collaboration platform</span>
                                 <div className="block mt-8">
-                                    <span className="text-2xl font-medium text-gray-400">Powered by Gemini</span>
+                                    <span className="text-2xl font-medium text-gray-400">Powered by Gemini 3</span>
                                 </div>
                             </>
                         )}

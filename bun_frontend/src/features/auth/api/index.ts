@@ -1,5 +1,5 @@
 import apiClient from "../../../services/apiClient";
-import { signInWithGoogle } from "../../../config/firebase";
+import { signInWithGoogle, signOutFromFirebase } from "../../../config/firebase";
 import type {
   User,
   AuthResponse,
@@ -44,6 +44,8 @@ export const getCurrentUser = async (): Promise<User> => {
 
 export const logoutUser = async (): Promise<void> => {
   try {
+    // Sign out from Firebase first to clear Google session
+    await signOutFromFirebase();
     await apiClient.post("/auth/logout");
   } catch {
     // Ignore errors on logout

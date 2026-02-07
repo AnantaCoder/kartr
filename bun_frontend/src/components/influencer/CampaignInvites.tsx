@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Check, X, Clock, Briefcase, ChevronRight, MessageSquare, AlertCircle, PlayCircle, CheckCircle } from 'lucide-react';
+import { Mail, Check, X, Clock, Briefcase, ChevronRight, MessageSquare, AlertCircle, PlayCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import campaignService from '../../services/campaignService';
 
@@ -21,6 +21,7 @@ interface Invite {
 const CampaignInvites: React.FC = () => {
     const [invites, setInvites] = useState<Invite[]>([]);
     const [loading, setLoading] = useState(true);
+    const [processingAction, setProcessingAction] = useState<{ id: string, type: 'accept' | 'reject' } | null>(null);
 
     const fetchInvites = async () => {
         try {
@@ -38,11 +39,14 @@ const CampaignInvites: React.FC = () => {
     }, []);
 
     const handleRespond = async (campaignId: string, accept: boolean) => {
+        setProcessingAction({ id: campaignId, type: accept ? 'accept' : 'reject' });
         try {
             await campaignService.respondToInvitation(campaignId, accept);
-            fetchInvites(); // Refresh to update status
+            await fetchInvites(); // Refresh to update status
         } catch (error) {
             console.error("Failed to respond:", error);
+        } finally {
+            setProcessingAction(null);
         }
     };
 
@@ -129,16 +133,34 @@ const CampaignInvites: React.FC = () => {
                                         <Button
                                             size="sm"
                                             onClick={() => handleRespond(invite.campaign.id, false)}
+                                            disabled={!!processingAction}
                                             className="bg-white/5 hover:bg-white/10 text-gray-400 hover:text-red-400 border border-white/10"
                                         >
-                                            <X className="w-4 h-4 mr-2" /> Decline
+                                            {processingAction?.id === invite.campaign.id && processingAction.type === 'reject' ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Declining
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <X className="w-4 h-4 mr-2" /> Decline
+                                                </>
+                                            )}
                                         </Button>
                                         <Button
                                             size="sm"
                                             onClick={() => handleRespond(invite.campaign.id, true)}
+                                            disabled={!!processingAction}
                                             className="bg-purple-600 hover:bg-purple-700 text-white"
                                         >
-                                            <Check className="w-4 h-4 mr-2" /> Accept
+                                            {processingAction?.id === invite.campaign.id && processingAction.type === 'accept' ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Accepting
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Check className="w-4 h-4 mr-2" /> Accept
+                                                </>
+                                            )}
                                         </Button>
                                     </div>
                                 </div>

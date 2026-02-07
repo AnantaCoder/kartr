@@ -3,6 +3,7 @@ import { Send, Bot, User, Loader2, Sparkles, AlertCircle, Maximize2, Minimize2 }
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import apiClient from "../../services/apiClient";
+import "./AgenticChat.css";
 
 interface Message {
     id: string;
@@ -29,47 +30,66 @@ export default function AgenticChat() {
         scrollToBottom();
     }, [messages, isFullScreen]);
 
+    // Helper to create a new conversation and initialize chat
+    const createNewConversation = async (): Promise<string | null> => {
+        try {
+            const res = await apiClient.post("/chat/conversations", {
+                title: "Agentic Session",
+                mode: "agentic"
+            });
+
+            const newId = res.data.conversation.id;
+
+            const newMessages: Message[] = [
+                {
+                    id: "init",
+                    role: "assistant",
+                    content: "I am **Kartr Agentic Intelligence**. I analyze your influencer ecosystem using real-time market data.\n\n*What strategic objective shall we address today?*",
+                    created_at: new Date().toISOString()
+                }
+            ];
+
+            setConversationId(newId);
+            setMessages(newMessages);
+
+            // Clear old state and save new
+            localStorage.removeItem("agentic_chat_state");
+
+            return newId;
+        } catch (err) {
+            console.error("Failed to create conversation", err);
+            setError("Failed to initialize Agentic Intelligence connection.");
+            return null;
+        }
+    };
+
     // Load state from local storage on mount
     useEffect(() => {
         const loadState = async () => {
             try {
-                // Get user ID from token if possible, or just use a generic key if we trust auth
-                // Ideally we should use the user ID from redux, but to be self-contained:
                 const token = localStorage.getItem("token");
                 if (!token) return;
-
-                // Simple parsing to get user ID would be better, but let's assume one user per browser for MVP 
-                // or just append a prefix.
-                // However, the best way is to use the user ID. 
-                // Let's rely on the fact that if we are here, we are logged in.
 
                 const savedState = localStorage.getItem("agentic_chat_state");
                 if (savedState) {
                     const parsed = JSON.parse(savedState);
-                    // Check if it's not too old? (Optional)
-                    setConversationId(parsed.conversationId);
-                    setMessages(parsed.messages);
-                    return;
+
+                    // Verify the conversation still exists on the server
+                    try {
+                        await apiClient.get(`/chat/conversations/${parsed.conversationId}`);
+                        // Conversation exists, restore state
+                        setConversationId(parsed.conversationId);
+                        setMessages(parsed.messages);
+                        return;
+                    } catch (verifyErr: any) {
+                        // Conversation not found (404) or other error - create a new one
+                        console.warn("Saved conversation not found, creating new one", verifyErr);
+                        localStorage.removeItem("agentic_chat_state");
+                    }
                 }
 
-                // If no saved state, initialize new chat
-                const res = await apiClient.post("/chat/conversations", {
-                    title: "Agentic Session",
-                    mode: "agentic"
-                });
-
-                const newId = res.data.conversation.id;
-                setConversationId(newId);
-
-                const newMessages: Message[] = [
-                    {
-                        id: "init",
-                        role: "assistant", // Type cast as necessary
-                        content: "I am **Kartr Agentic Intelligence**. I analyze your influencer ecosystem using real-time market data.\n\n*What strategic objective shall we address today?*",
-                        created_at: new Date().toISOString()
-                    }
-                ];
-                setMessages(newMessages);
+                // If no saved state or conversation not found, initialize new chat
+                await createNewConversation();
 
             } catch (err: any) {
                 console.error("Failed to init chat", err);
@@ -122,9 +142,46 @@ export default function AgenticChat() {
             ]);
         } catch (err: any) {
             console.error("Send failed", err);
-            // Try to extract useful error message
-            const errMsg = err.response?.data?.detail || "Analysis interrupted. Please try again.";
-            setError(errMsg);
+
+            // Check if it's a 404 (conversation not found) error
+            if (err.response?.status === 404) {
+                console.warn("Conversation not found, creating new conversation and retrying...");
+
+                // Create a new conversation
+                const newConvoId = await createNewConversation();
+
+                if (newConvoId) {
+                    // Add the user message to the new conversation's messages
+                    setMessages(prev => [...prev, {
+                        id: Date.now().toString(),
+                        role: "user",
+                        content: userMsg,
+                        created_at: new Date().toISOString()
+                    }]);
+
+                    // Retry sending the message with the new conversation
+                    try {
+                        const retryRes = await apiClient.post(`/chat/conversations/${newConvoId}/messages`, {
+                            message: userMsg
+                        });
+
+                        setMessages(prev => [
+                            ...prev,
+                            retryRes.data.assistant_message
+                        ]);
+                        setError(null);
+                    } catch (retryErr: any) {
+                        console.error("Retry send failed", retryErr);
+                        setError("Failed to send message. Please try again.");
+                    }
+                } else {
+                    setError("Session expired. Please refresh the page to start a new conversation.");
+                }
+            } else {
+                // Try to extract useful error message
+                const errMsg = err.response?.data?.detail || "Analysis interrupted. Please try again.";
+                setError(errMsg);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -177,7 +234,7 @@ export default function AgenticChat() {
                                 : "bg-purple-600 text-white rounded-tr-none font-medium"
                                 }`}>
                                 {msg.role === "assistant" ? (
-                                    <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-headings:text-purple-200 prose-a:text-purple-300 hover:prose-a:text-purple-200">
+                                    <div className="agentic-response">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                             {msg.content}
                                         </ReactMarkdown>

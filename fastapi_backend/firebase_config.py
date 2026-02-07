@@ -521,19 +521,31 @@ def verify_firebase_id_token(id_token: str) -> Optional[Dict[str, Any]]:
     """
     auth = get_auth()
     if auth is None:
+        logger.error("Firebase Auth not available for token verification")
         return None
     
     try:
-        decoded_token = auth.verify_id_token(id_token)
+        # Log token prefix for debugging (first 20 chars only for security)
+        token_preview = id_token[:50] + "..." if len(id_token) > 50 else id_token
+        logger.debug(f"Verifying Firebase ID token: {token_preview}")
+        
+        decoded_token = auth.verify_id_token(id_token, check_revoked=True)
+        logger.debug(f"Token verified successfully for user: {decoded_token.get('uid', 'unknown')}")
         return decoded_token
-    except auth.InvalidIdTokenError:
-        logger.warning("Invalid Firebase ID token")
+    except auth.InvalidIdTokenError as e:
+        logger.warning(f"Invalid Firebase ID token: {str(e)}")
         return None
-    except auth.ExpiredIdTokenError:
-        logger.warning("Expired Firebase ID token")
+    except auth.ExpiredIdTokenError as e:
+        logger.warning(f"Expired Firebase ID token: {str(e)}")
+        return None
+    except auth.RevokedIdTokenError as e:
+        logger.warning(f"Revoked Firebase ID token: {str(e)}")
+        return None
+    except auth.CertificateFetchError as e:
+        logger.error(f"Certificate fetch error: {str(e)}")
         return None
     except Exception as e:
-        logger.error(f"Firebase ID token verification error: {e}")
+        logger.error(f"Firebase ID token verification error: {type(e).__name__}: {str(e)}")
         return None
 
 
