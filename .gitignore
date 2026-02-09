@@ -33,7 +33,7 @@ uploads/
 data/
 bun.lock
 package-lock.json
-*.png
+# *.png
 *.jpg
 *.jpeg
 *.mp4
