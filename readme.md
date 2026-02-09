@@ -1,400 +1,156 @@
-# 🚀 Kartr: AI-Powered Influencer-Sponsor Nexus
+# 🚀 Kartr — AI-Powered Influencer–Sponsor Intelligence Platform
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Bun](https://img.shields.io/badge/Bun-%23000000.svg?style=flat&logo=bun&logoColor=white)](https://bun.sh/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+> Turning chaotic influencer marketing into a structured, data-driven system.
 
-**Kartr** is a next-generation SaaS platform that automates the bridge between content creators and brand sponsors. Leveraging high-frequency AI analysis and relationship mapping, Kartr eliminates the manual bottlenecks of influencer marketing.
-
-**Table of Contents**
-- [Features](#-core-features)
-- [Tech Stack](#-system-architecture--tech-stack)
-- [Getting Started](#-getting-started)
-- [Project Structure](#-project-structure)
-- [API Documentation](#-api-documentation)
-- [Contributing](#-contributing)
-- [License](#-license)
+Kartr is a full-stack AI platform that detects sponsorships, maps creator–brand relationships, automates campaigns, and generates social content using multimodal AI. Built for brands, agencies, and creators who want clarity instead of guesswork.
 
 ---
 
-## 🏗️ System Architecture & Tech Stack
+## 🌍 Inspiration
 
-Kartr is built on a high-performance asynchronous architecture designed for scale and real-time intelligence.
+Influencer marketing is exploding, but the tools behind it still feel manual and fragmented. Brands struggle to track who is sponsoring whom, creators lack visibility into opportunities, and campaigns often run on guesswork instead of data.  
 
-### 🌐 Frontend (The Experience)
-- **Runtime**: [Bun](https://bun.sh/) — The ultra-fast JavaScript runtime.
-- **Framework**: [React 19](https://react.dev/) — Latest concurrent rendering features.
-- **Styling**: [Tailwind CSS 4.0](https://tailwindcss.com/) — Next-gen utility-first CSS.
-- **Components**: [shadcn/ui](https://ui.shadcn.com/) — Radix-based premium accessible components.
-- **State**: [Redux Toolkit](https://redux-toolkit.js.org/) — Predictable global state management.
-- **Motion**: [Framer Motion](https://www.framer.com/motion/) — Advanced micro-interactions and animations.
-- **Visuals**: [Recharts](https://recharts.org/) — Composable charting library for analytics.
-- **HTTP Client**: [Axios](https://axios-http.com/) — Promise-based HTTP requests.
+Working closely with YouTube sponsorships exposed how inefficient and opaque this space is. Kartr was inspired by the idea of building an intelligence layer for the creator economy — one that can detect sponsorships, match brands with the right influencers, automate social media workflows, and generate content with AI.  
 
-### ⚙️ Backend (The Intelligent Core)
-- **Framework**: [FastAPI](https://fastapi.tiangolo.com/) — High-performance Python async framework.
-- **Server**: [Uvicorn](https://www.uvicorn.org/) — ASGI web server.
-- **Validation**: [Pydantic v2](https://docs.pydantic.dev/) — Type-safe data modeling.
-- **Processing**: [Pandas](https://pandas.pydata.org/) & [NetworkX](https://networkx.org/) — Data manipulation and relationship graph mapping.
-- **HTTP Client**: [httpx](https://www.python-httpx.org/) — Asynchronous HTTP requests for service orchestration.
-
-### 🧠 Intelligence & Infrastructure
-- **AI Models**: 
-  - Google Gemini 1.5 (Pro/Flash) — Primary AI engine
-  - Groq (Llama 3.3 70B) — High-speed inference
-  - OpenAI/Grok — Fallback models
-- **Database/Auth**: [Firebase](https://firebase.google.com/) — Real-time NoSQL and production-grade Auth.
-- **Media**: [Cloudinary](https://cloudinary.com/) — Edge-optimized image/video management.
-- **Social**: [atproto](https://atproto.com/) — Direct integration with the Bluesky decentralized network.
-- **APIs**: [YouTube Data API v3](https://developers.google.com/youtube/v3), [Tavily](https://tavily.com/) — Search & Research.
+By combining multimodal models, real-time search, and automation, the goal is to turn chaotic influencer marketing into a transparent, data-driven system.
 
 ---
 
-## ✨ Core Features
+## ⚡ What Kartr Does
 
-| Feature | Description |
-| :--- | :--- |
-| **Bulk AI Analysis** | Scan multiple YouTube URLs simultaneously for sponsor detection and niche extraction. |
-| **Relationship Mapping** | Bipartite graphs visualizing creator-brand networks with Fit Scores. |
-| **Ad Studio** | Instant AI-generated ad creatives and cross-platform posting (Bluesky). |
-| **Sponsor Dashboard** | Real-time ROI tracking, active creator metrics, and detailed campaign spent analysis. |
-| **Virtual Influencers** | AI-generated creator personas for brand-safe promotional campaigns. |
-| **YouTube Analysis** | Deep content analysis and audience metrics extraction. |
-| **Campaign Management** | End-to-end campaign tracking and performance analytics. |
-| **Chat Assistant** | AI-powered chat for strategy and influencer discovery. |
+Kartr connects brands and influencers through automated sponsorship intelligence and campaign execution.
+
+### 🧠 Core Flow
+1. Users log in with **Google OAuth**
+2. Brands run **bulk or single YouTube analysis**
+3. **Gemini 3** detects sponsors and extracts brand relationships  
+4. Sponsors create campaigns  
+5. Agentic AI checks influencer credibility using **Tavily + Gemini**
+6. Influencers accept campaigns  
+7. Generate content → images, videos, captions  
+8. Auto-post to social platforms  
+9. Track campaign analytics in real time  
+
+### 🤖 AI Capabilities
+- Sponsor detection from YouTube videos  
+- Creator–brand relationship mapping  
+- AI image generation → **Gemini 2.5 Flash Image**  
+- AI video generation → **Veo-2.0-generate-001**  
+- Caption + post automation  
+- Real-time credibility checks  
+- Campaign analytics + insights  
+
+Two **Gemini 3 chatbots** power the experience:
+- 💬 General assistant for strategy and navigation  
+- 📊 Agentic assistant using **Tavily** for real-time data and campaign insights  
+
+All data is stored in **Firebase** and visualized in a unified dashboard.
+
+![Architecture Diagram](https://res.cloudinary.com/dkueksjlm/image/upload/v1770658582/Screenshot_2026-02-09_225243_t4wwys.png)
+![Wordflow Diagram](https://res.cloudinary.com/dkueksjlm/image/upload/v1770658582/Screenshot_2026-02-09_225303_sv2voe.png)
+---
+
+## 🏗️ How We Built It
+
+Kartr is deployed on **Google Cloud** with Dockerized services for scalability.
+
+### 🔐 Authentication
+- Google OAuth login
+- Firebase Auth
+
+### 📡 Data Collection
+- YouTube Data API → fetch channel & video data
+- Gemini 3 → analyze transcripts, metadata, and descriptions
+- Extract sponsors, brands, and niches
+
+### 🧠 Intelligence Layer
+- Gemini-powered search for influencer matching  
+- Tavily + Gemini → real-time credibility checks  
+- Graph mapping of creator–brand relationships  
+- Firebase stores structured data  
+
+### 🎬 Content Engine
+- Images → Gemini 2.5 Flash Image 
+- Videos → Veo-2.0-generate-001  
+- Caption generation  
+- Auto-posting to Bluesky  
+
+### 💬 Chat Assistants
+- Chatbot 1 → General help  
+- Chatbot 2 → Agentic real-time insights with Tavily  
+
+Everything runs through a **React dashboard** connected to a FastAPI backend.
 
 ---
 
-## 📁 Project Structure
+## 🧩 Challenges We Ran Into
 
-```bash
-kartr/
-├── fastapi_backend/          # Python 3.11+ FastAPI Backend
-│   ├── routers/              # API Endpoints
-│   │   ├── auth.py           # Authentication & Authorization
-│   │   ├── youtube.py        # YouTube Analysis & Metrics
-│   │   ├── campaign.py       # Campaign Management
-│   │   ├── bluesky.py        # Bluesky Social Integration
-│   │   ├── ad_studio.py      # AI-Generated Ad Creatives
-│   │   ├── influencer.py     # Influencer Discovery
-│   │   ├── chat.py           # AI Chat Assistant
-│   │   ├── search.py         # Search & Discovery
-│   │   └── ...other routers
-│   ├── services/             # Business Logic & AI Integration
-│   │   ├── auth_service.py   # User Management & JWT
-│   │   ├── analysis_service.py   # AI Content Analysis
-│   │   ├── rag_service.py    # Retrieval-Augmented Generation
-│   │   ├── campaign_service.py   # Campaign Tracking
-│   │   ├── graph_service.py  # Relationship Mapping
-│   │   ├── bluesky_service.py    # Social Media Posting
-│   │   └── ...other services
-│   ├── models/               # Pydantic Schemas & DTOs
-│   │   ├── auth_schemas.py
-│   │   ├── campaign_schemas.py
-│   │   ├── video_schemas.py
-│   │   └── ...other schemas
-│   ├── utils/                # Helpers, Middleware & Dependencies
-│   ├── tests/                # Unit & Integration Tests
-│   ├── docs/                 # API & Architecture Documentation
-│   ├── main.py               # FastAPI Application Entry Point
-│   ├── database.py           # Firebase Configuration
-│   ├── requirements.txt      # Python Dependencies
-│   └── .env                  # Environment Variables
-│
-├── bun_frontend/             # React 19 + Bun Frontend
-│   ├── src/
-│   │   ├── pages/            # View Components
-│   │   │   ├── Home.tsx      # Landing Page
-│   │   │   ├── Login.tsx     # Authentication
-│   │   │   ├── YoutubeAnalysis.tsx
-│   │   │   ├── BulkAnalysis.tsx
-│   │   │   ├── AdStudio.tsx
-│   │   │   ├── sponsor/      # Sponsor Dashboard
-│   │   │   ├── influencer/   # Influencer Pages
-│   │   │   └── admin/        # Admin Interface
-│   │   ├── components/       # Reusable UI Components
-│   │   │   ├── Button.tsx
-│   │   │   ├── Card.tsx
-│   │   │   ├── Modal.tsx
-│   │   │   └── ...shadcn components
-│   │   ├── services/         # API Calls & External Services
-│   │   ├── store/            # Redux Toolkit Slices
-│   │   │   ├── authSlice.ts
-│   │   │   ├── campaignSlice.ts
-│   │   │   └── ...other slices
-│   │   ├── hooks/            # Custom React Hooks
-│   │   ├── types/            # TypeScript Interfaces
-│   │   ├── lib/              # Utilities & Helpers
-│   │   ├── assets/           # Static Files
-│   │   ├── config/           # Configuration Files
-│   │   ├── App.tsx           # Root Component
-│   │   ├── main.tsx          # React DOM Entry Point
-│   │   └── index.html        # HTML Template
-│   ├── styles/               # Global Styles
-│   │   └── globals.css
-│   ├── package.json          # Bun Dependencies
-│   ├── tsconfig.json         # TypeScript Configuration
-│   ├── bunfig.toml           # Bun Configuration
-│   └── .env                  # Environment Variables
-│
-├── docs/                     # Documentation
-│   ├── ARCHITECTURE.md       # System Design & Flows
-│   ├── API.md                # API Endpoint Reference
-│   ├── SETUP.md              # Detailed Setup Guide
-│   └── TESTING.md            # Testing Strategy
-├── CONTRIBUTING.md           # Contribution Guidelines
-├── CODE_OF_CONDUCT.md        # Community Standards
-└── LICENSE                   # MIT License
-```
+Detecting sponsorships reliably was harder than expected because creators disclose ads in many different ways — spoken mentions, description links, or subtle overlays. Building a system that understands all of these required combining transcript parsing, multimodal Gemini analysis, and custom logic.  
+
+Handling noisy YouTube data and API rate limits during bulk analysis also required optimization. Matching brands with the right influencers needed tuning to avoid irrelevant results.  
+
+Integrating multiple models for video, image, and reasoning created orchestration and latency challenges. Ensuring real-time Tavily insights while keeping the system fast meant carefully balancing cost, speed, and accuracy.
 
 ---
 
-## 🚀 Getting Started
+## 🏆 Accomplishments We're Proud Of
 
-### Prerequisites
-- **Python 3.11+** ([Download](https://www.python.org/downloads/))
-- **Bun 1.3+** ([Install](https://bun.sh/)) or Node.js 18+
-- **Git** ([Install](https://git-scm.com/))
-- **Firebase Account** (Free tier available)
-- **Google API Keys** (YouTube, Gemini)
+We built a working end-to-end platform that goes beyond analysis and actually connects brands and influencers into a usable workflow. Kartr can detect sponsors from real videos, map relationships, and match campaigns with relevant creators using Gemini-powered search.  
 
-### 🛠️ Backend Setup
+We integrated multiple AI models for text, image, and video generation, added real-time credibility checks with Tavily, and deployed everything on Google Cloud using Docker.  
 
-1. **Navigate to Backend Directory**
-   ```bash
-   cd kartr/fastapi_backend
-   ```
-
-2. **Create Virtual Environment**
-   ```bash
-   # Windows
-   python -m venv .venv
-   .venv\Scripts\activate
-   
-   # macOS/Linux
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-
-3. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure Environment Variables**
-   ```bash
-   # Create .env file in fastapi_backend/
-   cp .env.example .env  # if available
-   ```
-   
-   Add the following:
-   ```env
-   # Firebase
-   FIREBASE_PROJECT_ID=your_project_id
-   FIREBASE_PRIVATE_KEY_ID=your_private_key_id
-   FIREBASE_PRIVATE_KEY="your_private_key"
-   FIREBASE_CLIENT_EMAIL=your_client_email
-   
-   # Google APIs
-   GOOGLE_API_KEY=your_youtube_api_key
-   GEMINI_API_KEY=your_gemini_api_key
-   
-   # Bluesky
-   BLUESKY_USERNAME=your_bluesky_username
-   BLUESKY_PASSWORD=your_bluesky_password
-   
-   # Cloudinary
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   
-   # Other LLM Providers (Optional)
-   GROQ_API_KEY=your_groq_key
-   OPENAI_API_KEY=your_openai_key
-   ```
-
-5. **Run Backend**
-   ```bash
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   ```
-   
-   Backend will be available at `http://localhost:8000`
-   - API Docs: `http://localhost:8000/docs`
-   - ReDoc: `http://localhost:8000/redoc`
-
-### 🌐 Frontend Setup
-
-1. **Navigate to Frontend Directory**
-   ```bash
-   cd kartr/bun_frontend
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   bun install
-   # OR if using npm
-   npm install
-   ```
-
-3. **Configure Environment Variables**
-   ```bash
-   # Create .env file in bun_frontend/
-   ```
-   
-   Add the following:
-   ```env
-   VITE_API_URL=http://localhost:8000
-   VITE_FIREBASE_API_KEY=your_firebase_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   ```
-
-4. **Run Frontend**
-   ```bash
-   bun dev
-   # OR if using npm
-   npm run dev
-   ```
-   
-   Frontend will be available at `http://localhost:5173`
+The dual-chatbot system makes the platform feel like an intelligent assistant instead of just a dashboard. Turning a messy industry problem into a functional AI system within hackathon time is a major win.
 
 ---
 
-## 🏗️ Architecture Overview
+## 📚 What We Learned
 
-### System Flow
+Multimodal AI is powerful but requires careful orchestration across models, APIs, and pipelines. Sponsorship detection involves context, audio, and patterns across videos — not just text.  
 
-```
-┌─────────────────────┐
-│   React Frontend    │
-│   (Bun/Vite)       │
-└──────────┬──────────┘
-           │ HTTP/WebSocket
-           ▼
-┌──────────────────────────────────┐
-│     FastAPI Backend              │
-│  ┌────────────────────────────┐  │
-│  │  Routers (12 modules)      │  │
-│  │  Auth, YouTube, Campaign   │  │
-│  └─────────────┬──────────────┘  │
-│                │                  │
-│  ┌─────────────▼──────────────┐  │
-│  │  Services Layer            │  │
-│  │  - AI Analysis             │  │
-│  │  - Graph Mapping           │  │
-│  │  - Campaign Tracking       │  │
-│  └─────────────┬──────────────┘  │
-│                │                  │
-└─────────┬──────┴───────┬──────────┘
-          │              │
-    ┌─────▼───┐    ┌────▼──────────┐
-    │Firebase │    │External APIs   │
-    │(Auth/DB)│    │YouTube, Gemini │
-    │         │    │Bluesky, etc    │
-    └─────────┘    └────────────────┘
-```
+We saw how fragmented influencer marketing data really is and how valuable structured insights can be. Working with Gemini, Tavily, and media generation models taught us how to balance speed, cost, and accuracy in real-time systems.  
 
-### Key Service Interactions
-
-1. **Authentication Service** — JWT generation, Firebase integration
-2. **Analysis Service** — AI-powered content analysis using Gemini/Groq
-3. **RAG Service** — Retrieval-Augmented Generation for intelligent responses
-4. **Campaign Service** — Campaign lifecycle management and tracking
-5. **Graph Service** — Build and query creator-brand networks
-6. **Bluesky Service** — Post content to decentralized social network
-7. **Chat Service** — Conversational AI with context awareness
+We also improved our skills in async backend design, cloud deployment, and AI integration. Building for real users forced us to constantly iterate between product needs, AI capability, and system architecture.
 
 ---
 
-## 🧪 Testing
+## 🛠️ Technologies Used
 
-### Backend Tests
-```bash
-cd fastapi_backend
-pytest tests/ -v
-```
+**Frontend:**  
+Bun.js, React, TypeScript, Tailwind CSS, shadcn/ui, Redux Toolkit, Framer Motion, Recharts, Axios  
 
-### Frontend Tests
-```bash
-cd bun_frontend
-bun test
-```
+**Backend & AI:**  
+FastAPI (Python), Uvicorn, Firebase (DB + Auth), Gemini 3, Gemini 2.5 Flash (image generation), Veo-2.0-generate-001 (video generation), Tavily API (real-time data), YouTube Data API v3, NetworkX, Pandas  , Bluesky API
 
-See [TESTING.md](fastapi_backend/docs/TESTING.md) for detailed testing strategies.
+**Infrastructure & Orchestration:**  
+Google Cloud Platform, Docker, async task orchestration, AI agent pipelines, RAG pipelines, REST APIs, cloud storage, background workers, scalable microservices architecture  
 
 ---
 
-## 📖 Additional Documentation
+## 🔮 What's Next for Kartr
 
-- **[ARCHITECTURE.md](fastapi_backend/docs/ARCHITECTURE.md)** — Deep dive into system design
-- **[API.md](fastapi_backend/docs/API.md)** — Complete API reference
-- **[SETUP.md](fastapi_backend/docs/SETUP.md)** — Detailed setup instructions
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — How to contribute
-- **[logic.md](logic.md)** — Core business logic documentation
+Next, we’re turning Kartr into a scalable intelligence layer for the creator economy.
 
----
+Planned upgrades:
+- Real-time monitoring of new videos  
+- Deeper sponsorship analytics  
+- Pricing insights for brand deals  
+- TikTok, Instagram, and X integrations  
+- Automated outreach tools  
+- Smart campaign recommendations  
+- Brand–creator marketplace  
+- Advanced ROI tracking  
 
-## 🤝 Contributing
-
-We welcome contributions! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-For detailed guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+The goal is to evolve Kartr from a powerful hackathon prototype into a production-ready SaaS platform that brands and creators rely on daily.
 
 ---
 
-## 📝 License
+## 💡 Vision
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+Kartr isn’t just a tool.  
+It’s the intelligence layer for the creator economy.  
 
----
-
-## 🙋 Support & Community
-
-- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/AnantaCoder/kartr/issues)
-- **Discussions**: Join our community discussions
-- **Code of Conduct**: Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+A world where sponsorship decisions are data-driven, transparent, and automated.
 
 ---
 
-## 🚀 Roadmap
-
-- [ ] Mobile app (React Native)
-- [ ] Advanced analytics dashboard
-- [ ] ML-powered creator recommendations
-- [ ] Integration with more social platforms
-- [ ] Real-time collaboration features
-
----
-
-**Made with ❤️ by the Kartr Team**
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for style guides and the PR process.
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📧 Contact & Support
-
-- **Mentor**: Kiran Chawan ([kiransc55@gmail.com](mailto:kiransc55@gmail.com))
-- **AI Engineer**: Anirban Sarkar , Aditi Kapoor , Raghav , Karan
-- **Location**: Indira Nagar, Bengaluru, India
-- **Website**: [kartr.ai](http://kartr.ai) (Coming Soon)
+**Built with caffeine, curiosity, and far too many API keys.**
